@@ -1,0 +1,1335 @@
+/* ---------------------------------------------------------------------------
+   Laplace Trainer — design tokens & layout
+   Light is the default; dark applies via OS preference or the header toggle
+   (data-theme on <html> wins in both directions).
+--------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --hairline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #5b4fd6;
+  --accent-soft: rgba(91, 79, 214, 0.09);
+  --accent-ink: #ffffff;
+  --meter-track: #e1e0d9;
+  --good: #006300;
+  --good-bg: rgba(12, 163, 12, 0.08);
+  --bad: #d03b3b;
+  --bad-bg: rgba(208, 59, 59, 0.08);
+  --code-bg: rgba(11, 11, 11, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #8a80f0;
+    --accent-soft: rgba(138, 128, 240, 0.14);
+    --accent-ink: #14122b;
+    --meter-track: #2c2c2a;
+    --good: #0ca30c;
+    --good-bg: rgba(12, 163, 12, 0.12);
+    --bad: #e66767;
+    --bad-bg: rgba(230, 103, 103, 0.12);
+    --code-bg: rgba(255, 255, 255, 0.07);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --hairline: #2c2c2a;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #8a80f0;
+  --accent-soft: rgba(138, 128, 240, 0.14);
+  --accent-ink: #14122b;
+  --meter-track: #2c2c2a;
+  --good: #0ca30c;
+  --good-bg: rgba(12, 163, 12, 0.12);
+  --bad: #e66767;
+  --bad-bg: rgba(230, 103, 103, 0.12);
+  --code-bg: rgba(255, 255, 255, 0.07);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.app {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+}
+
+/* Math is never uppercased, whatever label it happens to sit inside. */
+.katex {
+  text-transform: none;
+}
+
+/* Display math is centred by its container, and brings no margin of its own. */
+.katex-display {
+  margin: 0;
+}
+
+/* ---- header ---- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0 14px;
+  border-bottom: 1px solid var(--hairline);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-right: auto;
+}
+
+.brand-mark {
+  color: var(--accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border: 1px solid var(--border);
+  padding: 2px;
+}
+
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+  background: var(--code-bg);
+}
+
+.tab-active,
+.tab-active:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.due-dot {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--bad);
+  color: #fff;
+  border-radius: 99px;
+  vertical-align: 1px;
+}
+
+.tab-active .due-dot {
+  background: var(--accent-ink);
+  color: var(--accent);
+}
+
+.icon-btn {
+  font-size: 15px;
+  line-height: 1;
+  padding: 6px 10px;
+}
+
+/* ---- generic ---- */
+
+.main {
+  flex: 1;
+  padding-top: 22px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+}
+
+.card + .card {
+  margin-top: 14px;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.eyebrow {
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.btn {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  filter: brightness(1.08);
+}
+
+.btn-danger {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+/* ---- chips & scope ---- */
+
+.mode-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chip {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.chip-active,
+.chip-active:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.chip .katex {
+  font-size: 1em;
+}
+
+.scope-bar {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 16px;
+}
+
+.scope-bar .mode-bar:last-child {
+  margin-bottom: 0;
+}
+
+.meta-note {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ---- the domain rail: which way this problem runs ---- */
+
+.rail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rail-node {
+  border: 1px solid var(--hairline);
+  color: var(--muted);
+  padding: 2px 9px;
+  text-transform: none;
+  font-family: 'KaTeX_Math', Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.rail-node-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.rail-arrow {
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* ---- problem card ---- */
+
+.problem-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.problem-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 2px 8px;
+}
+
+.badge-section {
+  color: var(--muted);
+  border-color: var(--hairline);
+}
+
+/* Zill's row letters are lowercase; the badge's uppercasing must not reach them. */
+.badge-letter {
+  text-transform: none;
+}
+
+.question-line {
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.problem-tex {
+  padding: 24px 0 20px;
+  font-size: 23px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.divider {
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 18px;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Three options across rather than 2 + 1 with a hole in the grid. */
+.options-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  cursor: pointer;
+  min-height: 58px;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.option:disabled {
+  cursor: default;
+}
+
+.option-key {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+  border: 1px solid var(--hairline);
+  padding: 1px 7px;
+  flex-shrink: 0;
+}
+
+.option-body {
+  overflow-x: auto;
+  font-size: 16px;
+}
+
+.option-correct {
+  border-color: var(--good);
+  background: var(--good-bg);
+}
+
+.option-correct .option-key {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.option-wrong {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.option-dim {
+  opacity: 0.5;
+}
+
+.feedback {
+  padding: 10px 14px;
+  font-weight: 550;
+  border: 1px solid;
+  margin-top: 14px;
+}
+
+.feedback-good {
+  color: var(--good);
+  background: var(--good-bg);
+  border-color: var(--good);
+}
+
+.feedback-bad {
+  color: var(--bad);
+  background: var(--bad-bg);
+  border-color: var(--bad);
+}
+
+.feedback-near {
+  color: var(--ink-2);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hint {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  font-size: 14px;
+}
+
+.solution {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  font-size: 15px;
+  overflow-x: auto;
+}
+
+.solution .eyebrow {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* ---- typed answers ---- */
+
+.answer-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.answer-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.answer-input {
+  flex: 1;
+  min-width: 220px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+}
+
+.answer-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.preview {
+  min-height: 34px;
+  padding: 8px 2px 0;
+  font-size: 15px;
+  overflow-x: auto;
+  color: var(--ink-2);
+}
+
+.preview-label {
+  font-size: 12px;
+  margin-right: 6px;
+  color: var(--muted);
+}
+
+.syntax {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.syntax code {
+  margin-right: 8px;
+}
+
+/* ---- worked solutions ---- */
+
+.derivation-wrap {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 6px 16px 10px;
+}
+
+.derivation {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+}
+
+.derivation-step {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.derivation-step:first-child {
+  border-top: none;
+}
+
+.derivation-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+.derivation-label::before {
+  content: counter(step) '. ';
+  color: var(--accent);
+}
+
+.derivation-body {
+  min-width: 0;
+}
+
+.derivation-tex {
+  font-size: 17px;
+  overflow-x: auto;
+  padding: 3px 0;
+}
+
+.derivation-text {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+/* ---- diagnosis of a wrong choice ---- */
+
+.diagnosis {
+  margin-top: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--bad);
+  background: var(--surface);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.diagnosis .eyebrow {
+  display: block;
+  color: var(--bad);
+  margin-bottom: 3px;
+}
+
+/* ---- run counter ---- */
+
+.run-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12.5px;
+}
+
+.run-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.run-track {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.run-pip {
+  flex: 1;
+  max-width: 34px;
+  height: 4px;
+  background: var(--meter-track);
+}
+
+.run-pip-good {
+  background: var(--accent);
+}
+
+.run-pip-bad {
+  background: var(--bad);
+}
+
+/* ---- the table ---- */
+
+.pairs {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pairs th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 650;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.pairs td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.pairs tr:last-child td {
+  border-bottom: none;
+}
+
+.pair-row {
+  cursor: pointer;
+}
+
+.pair-row:hover td,
+.pair-row:focus-visible td {
+  background: var(--code-bg);
+}
+
+.pair-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.pair-open td {
+  border-bottom-color: transparent;
+}
+
+.pair-letter {
+  width: 34px;
+  color: var(--accent);
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.pair-tex {
+  font-size: 17px;
+  overflow-x: auto;
+  max-width: 1px; /* let the cell shrink and scroll rather than stretch */
+}
+
+.pair-cond {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.pair-name {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pair-tier {
+  width: 90px;
+}
+
+.pair-detail td {
+  padding-top: 0;
+  padding-bottom: 16px;
+}
+
+.pair-detail-inner {
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.pair-detail-inner p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.pair-example {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 16px;
+  padding: 2px 0;
+  overflow-x: auto;
+}
+
+.table-note {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* An inline citation you can open. Reads as a link, behaves as a button. */
+.cite {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-bottom: 1px solid currentColor;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.cite:hover {
+  background: var(--accent-soft);
+}
+
+.cite:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cite::after {
+  content: '↗';
+  font-size: 0.82em;
+  margin-left: 2px;
+  vertical-align: 1px;
+}
+
+/* ---- quoted theorem ---- */
+
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--accent);
+}
+
+/* The heading wraps internally; the close button never leaves its row. */
+.modal-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.theorem-number {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.theorem-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.modal-close {
+  flex-shrink: 0;
+  font-size: 18px;
+  padding: 2px 10px;
+}
+
+.modal-body {
+  padding: 16px 20px 18px;
+}
+
+.theorem-panel {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 20px 18px;
+}
+
+.theorem-lead-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 18px;
+  overflow-x: auto;
+}
+
+.theorem-grid {
+  display: grid;
+  /* Two columns as the book sets them, collapsing to one when there is no room. */
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 18px 20px;
+}
+
+.theorem-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  /* The letter never breaks away from its statement; a statement too wide for
+     its column scrolls instead of wrapping under the label. */
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.theorem-letter {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.theorem-tex {
+  font-size: 16px;
+  /* KaTeX splits inline math at relations so it can line-break; a quoted
+     theorem should scroll in one piece instead of folding mid-statement. */
+  white-space: nowrap;
+}
+
+.theorem-aside {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.theorem-panel + .theorem-aside {
+  margin: 16px 0 0;
+}
+
+.theorem-source {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.rule-tex {
+  padding: 10px 0 6px;
+  font-size: 17px;
+  overflow-x: auto;
+}
+
+/* ---- match board ---- */
+
+.board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.board-head {
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding-bottom: 2px;
+}
+
+.tile {
+  font: inherit;
+  font-size: 17px;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  padding: 14px 12px;
+  /* Uniform, so the two columns line up even though the pairings do not. */
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow-x: auto;
+}
+
+.tile:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.tile-picked,
+.tile-picked:hover {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: var(--accent-soft);
+}
+
+.tile-wrong {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+}
+
+.tile-done {
+  border-color: var(--good);
+  background: var(--good-bg);
+  opacity: 0.55;
+  cursor: default;
+}
+
+.board-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.board-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  font-size: 16px;
+}
+
+/* ---- review cards ---- */
+
+.card-prompt {
+  padding: 10px 0 4px;
+  font-size: 21px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.card-answer {
+  padding: 6px 0 4px;
+  font-size: 21px;
+  text-align: center;
+  overflow-x: auto;
+  color: var(--accent);
+}
+
+.grade-row .btn {
+  min-width: 104px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 46px 22px;
+}
+
+.empty-title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+/* ---- progress ---- */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.stat-tile {
+  padding: 14px 18px;
+}
+
+.stat-value {
+  font-size: 30px;
+  font-weight: 650;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-card {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 650;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.data-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meter {
+  display: inline-block;
+  vertical-align: middle;
+  width: 96px;
+  height: 8px;
+  background: var(--meter-track);
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.meter-num {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--ink-2);
+  min-width: 34px;
+}
+
+.reset-row {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.backup-box {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 96px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--page);
+  border: 1px solid var(--border);
+  padding: 10px;
+  resize: vertical;
+}
+
+/* ---- mastery tiers ---- */
+
+.tier-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 7px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.tier-new {
+  color: var(--muted);
+  border-color: var(--hairline);
+  background: transparent;
+}
+
+.tier-learning {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.tier-familiar {
+  color: var(--ink-2);
+  border-color: var(--muted);
+}
+
+.tier-proficient {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.tier-mastered {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+/* ---- about ---- */
+
+.about p,
+.about ul {
+  margin: 0 0 11px;
+  color: var(--ink-2);
+}
+
+.about ul {
+  padding-left: 20px;
+}
+
+.about li {
+  margin-bottom: 5px;
+}
+
+.about p:last-child {
+  margin-bottom: 0;
+}
+
+.about a {
+  color: var(--accent);
+}
+
+/* ---- footer ---- */
+
+.footer {
+  padding-top: 26px;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 760px) {
+  .options,
+  .options-3,
+  .rule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .derivation-step {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .pair-name,
+  .pair-tier {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .app {
+    padding: 0 14px 32px;
+  }
+
+  .header {
+    gap: 10px;
+  }
+
+  .problem-tex {
+    font-size: 19px;
+  }
+
+  .board {
+    gap: 8px;
+  }
+
+  /* Give the quoted statements the width they need rather than a scrollbar. */
+  .modal-head {
+    padding: 14px 14px 10px;
+  }
+
+  .modal-body {
+    padding: 14px 14px 16px;
+  }
+
+  .theorem-panel {
+    padding: 16px 12px;
+  }
+
+  .theorem-tex {
+    font-size: 14px;
+  }
+
+  .tile {
+    font-size: 15px;
+    min-height: 56px;
+    padding: 10px 8px;
+  }
+}

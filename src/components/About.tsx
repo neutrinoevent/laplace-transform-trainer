@@ -1,0 +1,75 @@
+import { Rich } from './Tex'
+
+export function About() {
+  return (
+    <section className="card about">
+      <h2 className="section-title">About</h2>
+      <p>
+        A drill for the seven basic transform pairs — Theorem 7.1.1 and Theorem 7.2.1 in Zill,{' '}
+        <em>A First Course in Differential Equations</em>, 9e.{' '}
+        <Rich text="Notation follows the book: $t$ and $s$ for the variables, $n$ for the power, $a$ for the exponential rate, $k$ for the frequency." />
+      </p>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
+        What it drills
+      </h3>
+      <ul>
+        <li>
+          <strong>Table</strong> — the seven pairs as pairs, with what separates each row from its
+          neighbours.
+        </li>
+        <li>
+          <strong>Drill</strong>{' '}
+          <Rich text="— generated problems in both directions. Answers are checked by evaluating what you typed, so any equivalent form passes: `3/(s^2+9)`, `3/(s*s+9)`, `sin(3t)/3`, `(1/3)sin 3t`." />
+        </li>
+        <li>
+          <strong>Match</strong>{' '}
+          <Rich text="— timed recognition. Producing $k/(s^2+k^2)$ and recognizing it on sight are different skills." />
+        </li>
+        <li>
+          <strong>Review</strong> — spaced repetition on the rows stated generically, so they are
+          still there at the exam.
+        </li>
+      </ul>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
+        The fix-up
+      </h3>
+      <p>
+        <Rich text="Most of the difficulty in $\mathcal{L}^{-1}$ is not the table, it is that the table almost never matches what you are handed. Rows (b), (d) and (f) each want a specific numerator — $n!$, or $k$ — and a problem will hand you something else. So the trainer scores each row separately in each direction, tells you when a wrong answer is a constant multiple of the right one rather than just calling it wrong, and shows the multiply-and-divide as its own line in every worked solution." />
+      </p>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
+        Not in this version
+      </h3>
+      <p>
+        <Rich text="The translation theorems, derivatives of a transform, transforms of derivatives, unit step functions, convolution, and partial fractions beyond splitting one shared denominator. Those build on these seven rows; the point of v1 is that the seven are automatic first." />
+      </p>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
+        Where your data lives
+      </h3>
+      <p>
+        No server, no accounts. Progress is stored in this browser and nowhere else; take a copy
+        from the Progress tab before clearing site data.
+      </p>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
+        Credit
+      </h3>
+      <p>
+        Built by Alexander Nichols, Old Dominion University, 2026. Released under the MIT license;
+        the source is on{' '}
+        <a
+          href="https://github.com/neutrinoevent/laplace-transform-trainer"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub
+        </a>
+        . The theorem statements are quoted from Zill for study purposes and remain the property of
+        their publisher.
+      </p>
+    </section>
+  )
+}

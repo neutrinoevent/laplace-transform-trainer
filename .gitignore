@@ -1,0 +1,10 @@
+node_modules
+dist
+*.local
+.DS_Store
+*.log
+
+# Reference photographs of the textbook pages — copyrighted, kept locally only
+IMG_*.jpg
+IMG_*.jpeg
+IMG_*.png
