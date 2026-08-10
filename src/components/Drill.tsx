@@ -10,6 +10,7 @@ import { Derivation } from './Derivation'
 import { Rail } from './Rail'
 import { ScopeBar } from './ScopeBar'
 import { Rich, Tex } from './Tex'
+import { useAnswerKeys } from './useAnswerKeys'
 
 const DIRECTION_CHIPS: { id: Direction | 'both'; label: string }[] = [
   { id: 'both', label: 'Both' },
@@ -143,21 +144,14 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
   }, [problem, typed, tries, settled, onAnswer])
 
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!dealt) return
-      if (e.key === 'Enter' && settled) {
-        advance()
-        return
-      }
-      if (mode === 'choose' && picked === null) {
-        const n = Number(e.key)
-        if (n >= 1 && n <= dealt.choices.length) pick(n - 1)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [dealt, picked, settled, mode, advance, pick])
+  useAnswerKeys({
+    active: dealt !== null,
+    settled,
+    mode,
+    optionCount: dealt?.choices.length ?? 0,
+    onPick: pick,
+    onAdvance: advance,
+  })
 
   const preview = useMemo(
     () => (problem && mode === 'type' ? previewOf(typed, problem.variable) : null),

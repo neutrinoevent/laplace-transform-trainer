@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { DERIV_ITEM, nextDerivProblem, type DerivMode, type DerivProblem } from '../generators/derivative'
+import { nextDerivProblem, type DerivMode, type DerivProblem } from '../generators/derivative'
 import { checkScoped, previewOf, type Verdict } from '../lib/check'
 import { autoOptionCount, TIER_LABEL, shouldType, tierFor } from '../lib/mastery'
 import { statsFor, type ProgressState } from '../store/progress'
@@ -8,6 +8,7 @@ import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
 import { DerivativeRule } from './DerivativeRule'
 import { Rich, Tex } from './Tex'
+import { useAnswerKeys } from './useAnswerKeys'
 
 type View = 'rule' | DerivMode
 
@@ -201,21 +202,14 @@ function DerivDrill({
     setTries((n) => n + 1)
   }, [dealt, typed, tries, settled, onAnswer])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!dealt) return
-      if (e.key === 'Enter' && settled) {
-        advance()
-        return
-      }
-      if (answering === 'choose' && picked === null) {
-        const n = Number(e.key)
-        if (n >= 1 && n <= dealt.choices.length) pick(n - 1)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [dealt, picked, settled, answering, advance, pick])
+  useAnswerKeys({
+    active: dealt !== null,
+    settled,
+    mode: answering,
+    optionCount: dealt?.choices.length ?? 0,
+    onPick: pick,
+    onAdvance: advance,
+  })
 
   const preview = useMemo(
     () => (dealt && answering === 'type' ? previewOf(typed, dealt.problem.symbols) : null),
@@ -358,5 +352,3 @@ function DerivDrill({
     </>
   )
 }
-
-export { DERIV_ITEM }

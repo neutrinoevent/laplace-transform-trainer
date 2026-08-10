@@ -47,6 +47,25 @@ const button = (label: string): HTMLButtonElement => {
 const click = (el: HTMLElement) =>
   act(() => el.dispatchEvent(new MouseEvent('click', { bubbles: true })))
 
+/** Type into a controlled input the way React sees it. */
+function type(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+  act(() => {
+    setter.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+const press = (target: EventTarget, key: string, init: KeyboardEventInit = {}) =>
+  act(() => {
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }))
+  })
+
+const release = (key: string) =>
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }))
+  })
+
 describe('app shell', () => {
   it('opens on the table, with all seven rows', () => {
     expect(container.querySelector('.brand-name')?.textContent).toBe('Laplace Trainer')
@@ -173,6 +192,45 @@ describe('app shell', () => {
     // but the answered state must be gone.
     expect(container.querySelector('.derivation-step')).toBeNull()
     expect(typeof first).toBe('string')
+  })
+
+  it('never lets one Enter press both check an answer and skip the result', () => {
+    click(tab('Drill'))
+    click(button('Type'))
+    const input = container.querySelector<HTMLInputElement>('.answer-input')!
+
+    // Enter inside the field checks the answer. The same press must not also
+    // reach the advance handler on its way up to the window.
+    type(input, 'nonsense_expression')
+    press(input, 'Enter')
+    expect(container.querySelector('.feedback')).not.toBeNull()
+    const shown = container.querySelector('.problem-tex')?.textContent
+
+    // Reveal, so the question is settled and Enter would ordinarily advance.
+    click(button('Show answer'))
+    expect(container.querySelector('.solution')).not.toBeNull()
+
+    // That same Enter is still held down: auto-repeat must not blow past the
+    // worked solution the student has not read yet.
+    press(document.body, 'Enter', { repeat: true })
+    expect(container.querySelector('.solution'), 'repeat advanced').not.toBeNull()
+    press(document.body, 'Enter')
+    expect(container.querySelector('.solution'), 'held key advanced').not.toBeNull()
+    expect(container.querySelector('.problem-tex')?.textContent).toBe(shown)
+
+    // Released and pressed again, it advances as documented.
+    release('Enter')
+    press(document.body, 'Enter')
+    expect(container.querySelector('.solution')).toBeNull()
+  })
+
+  it('advances on a fresh Enter once a choice is made', () => {
+    click(tab('Drill'))
+    click(button('Choose'))
+    click(container.querySelectorAll<HTMLElement>('.option')[0])
+    expect(container.querySelector('.solution')).not.toBeNull()
+    press(document.body, 'Enter')
+    expect(container.querySelector('.solution')).toBeNull()
   })
 
   it('reveals a review card and grades it', () => {
