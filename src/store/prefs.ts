@@ -14,6 +14,12 @@ export interface Prefs {
   derivView: 'rule' | 'transform' | 'solve'
   /** Transform drills: initial values as symbols, or as numbers. */
   derivSymbolic: boolean
+  /** Which face of the translation theorems was last open. */
+  shiftView: 'rule' | 'drill'
+  shiftTheorem: 'both' | 'first' | 'second'
+  shiftDirection: 'both' | 'forward' | 'inverse'
+  /** Mix translated forms into the ordinary seven-row drill. */
+  shiftsInDrill: boolean
 }
 
 const KEY = 'laplace-trainer-prefs-v1'
@@ -24,6 +30,10 @@ export const defaultPrefs = (): Prefs => ({
   response: 'auto',
   derivView: 'rule',
   derivSymbolic: true,
+  shiftView: 'rule',
+  shiftTheorem: 'both',
+  shiftDirection: 'both',
+  shiftsInDrill: false,
 })
 
 export function loadPrefs(): Prefs {

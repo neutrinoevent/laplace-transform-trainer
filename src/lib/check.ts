@@ -36,6 +36,12 @@ export interface Symbols {
   allowed: string[]
   /** How to print a symbol back in the "read as" line, e.g. `y1` → `y'(0)`. */
   display?: Record<string, string>
+  /**
+   * Extra functions the answer may call, beyond the elementary ones — the unit
+   * step, whose whole content is a discontinuity and so cannot be written any
+   * other way.
+   */
+  functions?: Record<string, (x: number) => number>
 }
 
 const single = (v: Variable): Symbols => ({ primary: v, allowed: [v] })
@@ -61,6 +67,11 @@ export function preprocess(raw: string, sym: Symbols | Variable): string {
   // Remaining LaTeX: drop control-sequence backslashes, braces become grouping
   s = s.replace(/\\([a-zA-Z]+)/g, '$1').replace(/[{}]/g, (m) => (m === '{' ? '(' : ')'))
   s = s.replace(/\bln\b/g, 'log')
+  // The unit step, however the student writes it: Zill's script U, a plain U or
+  // u, Heaviside's H, or the word.
+  if (symbols.functions && 'U' in symbols.functions) {
+    s = s.replace(/\b(?:heaviside|step|[uUH]|\u{1D4B0})\s*\(/gu, 'U(')
+  }
 
   // Initial values written the way the book writes them: y'''(0) before y''(0)
   // before y'(0), so the longer prime run always wins.
@@ -95,6 +106,8 @@ interface Parsed {
   evaluate: (scope: Record<string, number>) => number
 }
 
+type Scope = Record<string, number | ((x: number) => number)>
+
 export function parseExpr(
   raw: string,
   sym: Symbols | Variable,
@@ -122,7 +135,7 @@ export function parseExpr(
     if (n.type !== 'SymbolNode') return
     const name = (n as MathNode & { name: string }).name
     if (parent?.type === 'FunctionNode' && (parent as MathNode & { fn?: MathNode }).fn === n) {
-      if (!FUNCTIONS.has(name)) bad ??= name
+      if (!FUNCTIONS.has(name) && !(symbols.functions && name in symbols.functions)) bad ??= name
       return
     }
     if (allowed.has(name) || name === 'e' || name === 'pi') return
@@ -153,7 +166,7 @@ export function parseExpr(
     return { code: 'symbol', error: `Unknown symbol \`${bad}\`. Use \`${v}\` as the variable.` }
   }
 
-  let compiled: { evaluate: (scope: Record<string, number>) => unknown }
+  let compiled: { evaluate: (scope: Scope) => unknown }
   try {
     compiled = node.compile()
   } catch (err) {
@@ -180,7 +193,7 @@ export function parseExpr(
     tex,
     evaluate: (scope: Record<string, number>) => {
       try {
-        const out = compiled.evaluate(scope)
+        const out = compiled.evaluate({ ...symbols.functions, ...scope })
         return typeof out === 'number' ? out : NaN
       } catch {
         return NaN

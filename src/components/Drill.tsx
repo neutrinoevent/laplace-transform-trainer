@@ -46,6 +46,13 @@ function trim(problem: Problem, count: number) {
   return { choices: [...wrong.slice(0, at), correct, ...wrong.slice(at)], correctIndex: at }
 }
 
+/** Which theorem a problem is really testing, once translations are mixed in. */
+function sectionOf(problem: Problem): string {
+  if (problem.terms.some((t) => t.shift)) return '7.3.1'
+  if (problem.terms.some((t) => t.delay)) return '7.3.2'
+  return problem.direction === 'forward' ? '7.1.1' : '7.2.1'
+}
+
 /**
  * A problem together with the presentation chosen for it. Both are fixed when
  * the problem is dealt: answering moves the mastery score, and a score that
@@ -82,6 +89,7 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
         direction: prefs.direction,
         mastery: masteryMap(state),
         allowCombo: true,
+        allowShifts: prefs.shiftsInDrill,
         excludeForm: exclude,
       })
       const tier = tierFor(statsFor(state, problem.itemIds[0]))
@@ -89,7 +97,7 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
         prefs.response === 'auto' ? (shouldType(tier) ? 'type' : 'choose') : prefs.response
       return { problem, mode, tier, ...trim(problem, autoOptionCount(tier)) }
     },
-    [prefs.scope, prefs.direction, prefs.response],
+    [prefs.scope, prefs.direction, prefs.response, prefs.shiftsInDrill],
   )
 
   const reset = useCallback(() => {
@@ -179,6 +187,15 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
             </button>
           ))}
           <span style={{ width: 10 }} />
+          <button
+            className={prefs.shiftsInDrill ? 'chip chip-active' : 'chip'}
+            onClick={() => onPrefs({ ...prefs, shiftsInDrill: !prefs.shiftsInDrill })}
+            title="Mix in translated forms — Theorems 7.3.1 and 7.3.2 — alongside the plain rows"
+            aria-pressed={prefs.shiftsInDrill}
+          >
+            + Shifts
+          </button>
+          <span style={{ width: 10 }} />
           <span className="eyebrow">Answer</span>
           {RESPONSE_CHIPS.map((r) => (
             <button
@@ -216,9 +233,7 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
           <span className="badge">
             <span className="badge-letter">({form.letter})</span> {form.name}
           </span>
-          <span className="badge badge-section">
-            {problem.direction === 'forward' ? '7.1.1' : '7.2.1'}
-          </span>
+          <span className="badge badge-section">{sectionOf(problem)}</span>
           <Rail direction={problem.direction} />
           <span className="meta-note" style={{ marginLeft: 'auto' }}>
             {TIER_LABEL[tier]}

@@ -27,6 +27,10 @@ export function About() {
           <Rich text="— timed recognition. Producing $k/(s^2+k^2)$ and recognizing it on sight are different skills." />
         </li>
         <li>
+          <strong>Shifts</strong>{' '}
+          <Rich text="— the two translation theorems taught together, because they are one idea in two domains: an exponential in $t$ slides the transform along the $s$-axis, an exponential in $s$ delays the function along the $t$-axis. The unit step is taught here too, with figures, since it is the notation the second theorem is written in." />
+        </li>
+        <li>
           <strong>Derivatives</strong>{' '}
           <Rich text="— Theorem 7.2.2 three ways: the pattern, with the invariant that fixes it made visible; producing $\mathcal{L}\{y^{(n)}\}$; and using it to turn an initial-value problem into a formula for $Y(s)$." />
         </li>
@@ -47,7 +51,7 @@ export function About() {
         Not in this version
       </h3>
       <p>
-        <Rich text="The translation theorems, derivatives of a transform, unit step functions, convolution, and partial fractions beyond splitting one shared denominator — so the Solve drill stops at a formula for $Y(s)$ and does not invert it." />
+        <Rich text="Derivatives of a transform, convolution, periodic functions, the Dirac delta, and partial fractions beyond splitting one shared denominator — so the Solve drill stops at a formula for $Y(s)$ and does not invert it. The second translation theorem is drilled as the book states it, on $f(t-a)\\,\\mathcal{U}(t-a)$; the alternative form $\\mathcal{L}\\{g(t)\\,\\mathcal{U}(t-a)\\} = e^{-as}\\mathcal{L}\\{g(t+a)\\}$ is stated but not generated." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

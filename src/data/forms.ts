@@ -26,7 +26,22 @@ export interface Term {
   a?: number
   /** Frequency, for the four oscillating/hyperbolic rows. */
   k?: number
+  /**
+   * First translation, Theorem 7.3.1: the row is multiplied by `e^{shift·t}`,
+   * which replaces every `s` in its transform by `s - shift`. Meaningless on
+   * rows (a) and (c), which absorb the exponential, so it is never set there.
+   */
+  shift?: number
+  /**
+   * Second translation, Theorem 7.3.2: the row is delayed and switched on at
+   * `t = delay`, becoming `f(t-delay)·U(t-delay)`, which multiplies its
+   * transform by `e^{-delay·s}`.
+   */
+  delay?: number
 }
+
+/** A row carries at most one translation; the two do not compose cleanly. */
+export const isShifted = (t: Term): boolean => Boolean(t.shift) || Boolean(t.delay)
 
 export interface Form {
   id: FormId
@@ -59,24 +74,43 @@ function texRate(a: number, v = 't'): string {
   return `${a}${v}`
 }
 
+/** The unit step, written as Zill writes it. */
+export const stepTex = (d: number): string => `\\mathcal{U}(t - ${d})`
+
+/**
+ * The time argument a row is written in. A delayed row runs on `t - d`, and
+ * that substitution is the whole visible content of the second translation
+ * theorem — `\sin 3t` becoming `\sin 3(t-2)`.
+ */
+const timeArg = (term: Term): { v: string; grouped: string } =>
+  term.delay ? { v: `t - ${term.delay}`, grouped: `(t - ${term.delay})` } : { v: 't', grouped: 't' }
+
 /** The t-domain function of a term with its coefficient stripped off. */
 export function termBodyTex(term: Term): string {
-  switch (term.form) {
-    case 'one':
-      return ''
-    case 'power':
-      return term.n === 1 ? 't' : `t^{${term.n}}`
-    case 'exp':
-      return `e^{${texRate(term.a!)}}`
-    case 'sin':
-      return `\\sin ${texRate(term.k!)}`
-    case 'cos':
-      return `\\cos ${texRate(term.k!)}`
-    case 'sinh':
-      return `\\sinh ${texRate(term.k!)}`
-    case 'cosh':
-      return `\\cosh ${texRate(term.k!)}`
-  }
+  const { v, grouped } = timeArg(term)
+  // A delayed row runs on `t - d`, and every use of it needs the brackets:
+  // `\sin 3(t-2)`, not `\sin 3t - 2`.
+  const arg = term.delay ? grouped : 't'
+  const body = (() => {
+    switch (term.form) {
+      case 'one':
+        return ''
+      case 'power':
+        return term.n === 1 ? arg : `${arg}^{${term.n}}`
+      case 'exp': {
+        // The exponent's own braces already group it, so `e^{t-2}` needs none.
+        const rate = term.a === 1 ? v : term.a === -1 ? `-${arg}` : `${term.a}${arg}`
+        return `e^{${rate}}`
+      }
+      default: {
+        const wave = term.k === 1 ? arg : `${term.k}${arg}`
+        return `\\${term.form} ${wave}`
+      }
+    }
+  })()
+  if (term.delay) return body ? `${body}\\,${stepTex(term.delay)}` : stepTex(term.delay)
+  if (term.shift) return `e^{${texRate(term.shift)}}${body}`
+  return body
 }
 
 /** The t-domain term, split so a sum can fold the sign into its join. */
@@ -86,21 +120,28 @@ export function termFTex(term: Term): { neg: boolean; tex: string } {
   return { neg: term.coef.n < 0, tex: texCoef(mag, body) }
 }
 
-/** `s^2+9`, `s-3`, `s^{4}` — the denominator this row contributes. */
+/** The s-variable a translated row is written in: `s`, `s - 5`, `s + 2`. */
+export const shiftedVar = (shift?: number): string =>
+  !shift ? 's' : shift > 0 ? `s - ${shift}` : `s + ${-shift}`
+
+/** `s^2+9`, `s-3`, `(s-5)^{4}` — the denominator this row contributes. */
 export function termDenomTex(term: Term): string {
+  const v = shiftedVar(term.shift)
+  // Powers and squares need the translated variable bracketed; a bare `s` does not.
+  const g = term.shift ? `\\left(${v}\\right)` : 's'
   switch (term.form) {
     case 'one':
-      return 's'
+      return v
     case 'power':
-      return `s^{${term.n! + 1}}`
+      return `${g}^{${term.n! + 1}}`
     case 'exp':
       return term.a! < 0 ? `s + ${-term.a!}` : `s - ${term.a!}`
     case 'sin':
     case 'cos':
-      return `s^2 + ${term.k! ** 2}`
+      return `${g}^2 + ${term.k! ** 2}`
     case 'sinh':
     case 'cosh':
-      return `s^2 - ${term.k! ** 2}`
+      return `${g}^2 - ${term.k! ** 2}`
   }
 }
 
@@ -126,19 +167,33 @@ export function termNumer(term: Term): { coef: Frac; hasS: boolean } {
   }
 }
 
+/** `e^{-2s}`, the factor a delayed row contributes. */
+export const delayTex = (d?: number): string =>
+  !d ? '' : `e^{-${d === 1 ? '' : d}s}`
+
 /** The s-domain term, split so a sum can fold the sign into its join. */
 export function termSTex(term: Term): { neg: boolean; tex: string } {
   const { coef, hasS } = termNumer(term)
   const denom = termDenomTex(term)
   const neg = coef.n < 0
   const mag = neg ? { ...coef, n: -coef.n } : coef
+  const v = shiftedVar(term.shift)
+  const factor = delayTex(term.delay)
+
   if (isInt(mag)) {
-    return { neg, tex: `\\dfrac{${hasS ? texCoef(mag, 's') : String(mag.n)}}{${denom}}` }
+    // The `s` upstairs is translated too — the step most often missed.
+    const body = hasS
+      ? mag.n === 1
+        ? v
+        : `${mag.n}${term.shift ? `\\left(${v}\\right)` : 's'}`
+      : String(mag.n)
+    const numer = factor ? (body === '1' ? factor : `${body}${factor}`) : body
+    return { neg, tex: `\\dfrac{${numer}}{${denom}}` }
   }
   // A fractional multiplier reads better outside the fraction than on top of it.
   return {
     neg,
-    tex: `\\frac{${mag.n}}{${mag.d}}\\cdot\\dfrac{${hasS ? 's' : '1'}}{${denom}}`,
+    tex: `\\frac{${mag.n}}{${mag.d}}\\cdot${factor}\\dfrac{${hasS ? v : '1'}}{${denom}}`,
   }
 }
 
@@ -146,7 +201,8 @@ export function termSTex(term: Term): { neg: boolean; tex: string } {
 // Evaluation — used by the answer checker and by the corpus tests
 // ---------------------------------------------------------------------------
 
-export function evalTermF(term: Term, t: number): number {
+/** The row itself at time t, before any translation. */
+function baseF(term: Term, t: number): number {
   const c = term.coef.n / term.coef.d
   switch (term.form) {
     case 'one':
@@ -166,7 +222,8 @@ export function evalTermF(term: Term, t: number): number {
   }
 }
 
-export function evalTermS(term: Term, s: number): number {
+/** The row's transform at s, before any translation. */
+function baseS(term: Term, s: number): number {
   const c = term.coef.n / term.coef.d
   switch (term.form) {
     case 'one':
@@ -186,21 +243,37 @@ export function evalTermS(term: Term, s: number): number {
   }
 }
 
+export function evalTermF(term: Term, t: number): number {
+  // Delayed: off until t reaches the delay, then the row running on t - d.
+  if (term.delay) return t >= term.delay ? baseF(term, t - term.delay) : 0
+  return (term.shift ? Math.exp(term.shift * t) : 1) * baseF(term, t)
+}
+
+export function evalTermS(term: Term, s: number): number {
+  // Translated on the s-axis: the same transform read at s - a.
+  const base = baseS(term, s - (term.shift ?? 0))
+  return term.delay ? Math.exp(-term.delay * s) * base : base
+}
+
 /** Real poles of this row's transform, so the checker can sample away from them. */
 export function termPoles(term: Term): number[] {
-  switch (term.form) {
-    case 'one':
-    case 'power':
-      return [0]
-    case 'exp':
-      return [term.a!]
-    case 'sin':
-    case 'cos':
-      return []
-    case 'sinh':
-    case 'cosh':
-      return [term.k!, -term.k!]
-  }
+  const base = (() => {
+    switch (term.form) {
+      case 'one':
+      case 'power':
+        return [0]
+      case 'exp':
+        return [term.a!]
+      case 'sin':
+      case 'cos':
+        return []
+      case 'sinh':
+      case 'cosh':
+        return [term.k!, -term.k!]
+    }
+  })()
+  // Translating on the s-axis carries the poles with it.
+  return base.map((p) => p + (term.shift ?? 0))
 }
 
 export const evalF = (terms: Term[], t: number): number =>

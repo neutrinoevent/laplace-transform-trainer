@@ -9,9 +9,10 @@
 
 import { CARD_BY_ID, CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { SHIFT_ITEMS } from '../generators/shift'
 
 /** Items that are drilled but never scheduled for review. */
-const DRILL_ONLY = new Set<string>([DERIV_ITEM.transform, DERIV_ITEM.solve])
+const DRILL_ONLY = new Set<string>([DERIV_ITEM.transform, DERIV_ITEM.solve, ...SHIFT_ITEMS])
 
 export interface ItemStats {
   attempts: number

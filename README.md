@@ -3,7 +3,8 @@
 A drill for the operational core of Laplace transforms as Zill sets it out in
 *A First Course in Differential Equations*, 9e: the seven basic pairs of **Theorem 7.1.1** and
 **Theorem 7.2.1**, in both directions and with the constant fix-up made the explicit object of
-practice, and the transform of a derivative, **Theorem 7.2.2**, which is what puts them to work.
+practice; the transform of a derivative, **Theorem 7.2.2**, which is what puts them to work; and the
+two translation theorems of §7.3, **7.3.1** and **7.3.2**, which are what make them reach.
 
 Notation follows the book exactly: `t` and `s` for the variables, `n` for the power, `a` for the
 exponential rate, `k` for the frequency, and the rows labelled (a)–(g) in the order the book gives
@@ -27,6 +28,9 @@ the expression in front of them: rows (b), (d) and (f) each demand a specific nu
 
 So the whole trainer is organised around that gap.
 
+- **A translation is an operation on a row, not a new row.** `shift` and `delay` live on the same
+  `Term` the seven rows use, so translated forms render, evaluate, track their poles and mix into
+  the ordinary drill through the machinery that was already there.
 - **Each row is scored separately in each direction.** `sin:forward` and `sin:inverse` are
   different skills tracked as different items; the fix-up lives only on the inverse side, and it
   is reliably the weaker one.
@@ -51,6 +55,12 @@ So the whole trainer is organised around that gap.
   typed once it holds; the scaffolding fades on its own.
 - **Match** — a timed board pairing f(t) tiles against F(s) tiles. Recognising a form on sight is
   a different skill from producing it, and it is the one an exam leans on.
+- **Shifts** — the translation theorems, §7.3.1 and §7.3.2, taught on one page because they are
+  one idea in two domains: an exponential in `t` slides the transform along the `s`-axis, an
+  exponential in `s` delays the function along the `t`-axis. The unit step is taught here too, with
+  drawn figures, since it is the notation the second theorem is written in. Drilling covers both
+  theorems in both directions, including the inverse case that only yields to completing the square.
+  A `+ Shifts` switch in the ordinary Drill mixes translated rows in with the plain ones.
 - **Derivatives** — Theorem 7.2.2 (§7.2.2), in three faces. *Rule* states it, derives (6) by parts,
   shows (7) falling out of (6), and writes the expansion out at any order beside a table of the
   invariant that fixes it. *Transform* drills producing `L{y⁽ⁿ⁾}`, with the initial values left as
@@ -78,9 +88,11 @@ under the box shows how the expression was parsed before you commit to it.
 
 ## Not in this version
 
-The translation theorems, derivatives of a transform, unit step functions, convolution, and
-partial fractions beyond splitting one shared denominator. The Solve drill therefore stops at a
-formula for `Y(s)` and does not invert it — inverting it is the next section's work.
+Derivatives of a transform, convolution, periodic functions, the Dirac delta, and partial fractions
+beyond splitting one shared denominator. The Solve drill therefore stops at a formula for `Y(s)` and
+does not invert it. The second translation theorem is drilled as the book states it, on
+`f(t-a)U(t-a)`; the alternative form `L{g(t)U(t-a)} = e^{-as}L{g(t+a)}` is stated in the reference
+but never generated.
 
 ## Running it
 
@@ -101,6 +113,7 @@ src/
   data/forms.ts        the seven rows: notation, teaching notes, term rendering and evaluation
   data/theorems.ts     the three theorems as the book states them, for quoting verbatim
   data/derivatives.ts  the derivative rule: equations (6)-(8), its origin, its invariant
+  data/shifts.ts       the translation theorems, the unit step, and the piecewise conversions
   data/cards.ts        the review deck, derived from the rows
   lib/frac.ts          exact rationals, so 1/3! prints as a fraction and not as 0.1666…
   lib/check.ts         parsing and numeric grading of typed answers
@@ -108,7 +121,7 @@ src/
   lib/poly.ts          integer polynomials, for the characteristic polynomial and its roots
   lib/mastery.ts       tiers, and the scaffolding that fades with them
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Derivatives, Review, Progress, About
+  components/          Table, Drill, Match, Shifts, Derivatives, Review, Progress, About
   store/               localStorage-backed progress and preferences
 ```
 

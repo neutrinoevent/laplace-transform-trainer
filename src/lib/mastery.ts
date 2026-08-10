@@ -1,5 +1,6 @@
 import { FORM_IDS, type FormId } from '../data/forms'
 import { DERIV_ITEM } from '../generators/derivative'
+import { SHIFT_ITEMS } from '../generators/shift'
 import { itemId, type Direction } from '../generators/types'
 import { statsFor, type ProgressState } from '../store/progress'
 
@@ -34,6 +35,7 @@ export function overallScore(p: ProgressState): number {
     ...FORM_IDS.flatMap((f) => [itemId(f, 'forward'), itemId(f, 'inverse')]),
     DERIV_ITEM.transform,
     DERIV_ITEM.solve,
+    ...SHIFT_ITEMS,
   ]
   return ids.reduce((sum, id) => sum + statsFor(p, id).ema, 0) / ids.length
 }

@@ -11,6 +11,7 @@
 
 import {
   FORM_BY_ID,
+  isShifted,
   termBodyTex,
   termDenomTex,
   termFTex,
@@ -54,8 +55,25 @@ function factorTex(t: Term): string {
   return texFrac(c)
 }
 
+/** Naming a translated row means naming the theorem that translated it. */
+function identifyTranslated(t: Term, direction: 'forward' | 'inverse'): string {
+  const form = FORM_BY_ID.get(t.form)!
+  const row = `row (${form.letter})`
+  if (t.delay) {
+    return direction === 'forward'
+      ? `This is $f(t-a)\\,\\mathcal{U}(t-a)$ built on ${row} with $a = ${t.delay}$, so Theorem 7.3.2 applies: transform the row, then multiply by $e^{-${t.delay === 1 ? '' : t.delay}s}$.`
+      : `The factor $e^{-${t.delay === 1 ? '' : t.delay}s}$ is Theorem 7.3.2 — what is left is ${row}, and the answer is delayed by ${t.delay} and switched on there.`
+  }
+  const a = t.shift!
+  const written = a > 0 ? `s - ${a}` : `s + ${-a}`
+  return direction === 'forward'
+    ? `Theorem 7.3.1 on ${row}: multiplying by $e^{${a === 1 ? '' : a === -1 ? '-' : a}t}$ replaces every $s$ by $${written}$.`
+    : `The transform is ${row} written in $${written}$ rather than $s$ — Theorem 7.3.1 with $a = ${a}$, so the answer carries $e^{${a === 1 ? '' : a === -1 ? '-' : a}t}$.`
+}
+
 /** "Row (d), with k = 3" — the sentence that names what you are looking at. */
 export function identify(t: Term, direction: 'forward' | 'inverse'): string {
+  if (isShifted(t)) return identifyTranslated(t, direction)
   const form = FORM_BY_ID.get(t.form)!
   const row = `Row (${form.letter})`
   if (direction === 'forward') {
@@ -98,6 +116,48 @@ export function identify(t: Term, direction: 'forward' | 'inverse'): string {
 export function needsFixup(t: Term): boolean {
   const rowNumer = termNumer(unit(t)).coef
   return rowNumer.n !== 1 && !isOne(t.coef)
+}
+
+/** A translated row, worked through the row it was built from. */
+function translatedSteps(t: Term, direction: 'forward' | 'inverse'): Step[] {
+  const form = FORM_BY_ID.get(t.form)!
+  const plain: Term = { ...t, shift: undefined, delay: undefined }
+  const unit: Term = { ...plain, coef: frac(1) }
+  const theorem = t.delay ? '7.3.2' : '7.3.1'
+  if (direction === 'forward') {
+    return [
+      {
+        label: `Row (${form.letter})`,
+        text: 'Transform the row on its own, before the translation is considered at all.',
+        tex: `${lap(fTex([unit]))} = ${sTex([unit])}`,
+      },
+      {
+        label: `Theorem ${theorem}`,
+        text: identify(t, 'forward'),
+        tex: `${lap(signed(termFTex(t)))} = ${signed(termSTex(t))}`,
+      },
+    ]
+  }
+  return [
+    {
+      label: `Theorem ${theorem}`,
+      text: identify(t, 'inverse'),
+    },
+    {
+      label: `Row (${form.letter})`,
+      text: needsFixup(plain)
+        ? 'Invert the untranslated row first, fixing its constant up as usual — the translation changes nothing about that.'
+        : 'Invert the untranslated row first.',
+      tex: `${invLap(sTex([plain]))} = ${fTex([plain])}`,
+    },
+    {
+      label: 'Translate',
+      text: t.delay
+        ? `Replace $t$ by $t-${t.delay}$ throughout and switch on at $t = ${t.delay}$.`
+        : 'Attach the exponential the translation stands for.',
+      tex: `${invLap(signed(termSTex(t)))} = ${signed(termFTex(t))}`,
+    },
+  ]
 }
 
 function forwardStep(t: Term): Step {
@@ -149,7 +209,7 @@ export function deriveForward(terms: Term[]): Step[] {
         .join('')}`,
     })
   }
-  steps.push(...terms.map(forwardStep))
+  steps.push(...terms.flatMap((t) => (isShifted(t) ? translatedSteps(t, 'forward') : [forwardStep(t)])))
   if (terms.length > 1) {
     steps.push({ label: 'Result', tex: `${lap(fTex(terms))} = ${sTex(terms)}` })
   }
@@ -167,7 +227,7 @@ export function deriveInverse(terms: Term[], splitFrom?: string): Step[] {
   } else if (terms.length > 1) {
     steps.push({ label: 'Linearity', text: LINEARITY_TEXT })
   }
-  steps.push(...terms.map(inverseStep))
+  steps.push(...terms.flatMap((t) => (isShifted(t) ? translatedSteps(t, 'inverse') : [inverseStep(t)])))
   if (terms.length > 1) {
     steps.push({
       label: 'Result',

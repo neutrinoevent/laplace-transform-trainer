@@ -37,6 +37,8 @@ export function Rich({ text }: { text: string }) {
           <Tex key={i} tex={p.text} />
         ) : p.kind === 'code' ? (
           <code key={i}>{p.text}</code>
+        ) : p.kind === 'em' ? (
+          <em key={i}>{p.text}</em>
         ) : (
           <span key={i}>{p.text}</span>
         ),

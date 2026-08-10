@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FORMS } from '../data/forms'
 import { CARD_BY_ID, RULE_CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { shiftItemId } from '../generators/shift'
 import { itemId } from '../generators/types'
 import { TIER_LABEL, overallScore, tierFor } from '../lib/mastery'
 import {
@@ -106,7 +107,7 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                 </tr>
               )
             })}
-            {RULE_CARDS.filter((c) => c.id !== 'rule:derivative').map((c) => {
+            {RULE_CARDS.filter((c) => !c.id.startsWith('rule:') || c.id === 'rule:linearity' || c.id === 'rule:fixup').map((c) => {
               const s = statsFor(progress, c.id)
               return (
                 <tr key={c.id}>
@@ -125,6 +126,56 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
           </tbody>
         </table>
 
+      </div>
+
+      <div className="card table-card">
+        <h2 className="section-title">Translation theorems</h2>
+        <p className="meta-note" style={{ marginBottom: 12 }}>
+          A shift in one domain is a multiplier in the other. Each theorem is scored in both
+          directions, since spotting a translation in a given transform is the harder half.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Theorem</th>
+              <th>
+                <Tex tex="\\mathcal{L}" /> forward
+              </th>
+              <th>
+                <Tex tex="\\mathcal{L}^{-1}" /> inverse
+              </th>
+              <th className="num">Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(
+              [
+                ['first', '7.3.1 · on the s-axis', '\\mathcal{L}\\{e^{at}f(t)\\} = F(s-a)'],
+                ['second', '7.3.2 · on the t-axis', '\\mathcal{L}\\{f(t-a)\\,\\mathcal{U}(t-a)\\} = e^{-as}F(s)'],
+              ] as const
+            ).map(([theorem, name, tex]) => {
+              const fwd = statsFor(progress, shiftItemId(theorem, 'forward'))
+              const inv = statsFor(progress, shiftItemId(theorem, 'inverse'))
+              return (
+                <tr key={theorem}>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{name}</div>
+                    <div className="meta-note">
+                      <Tex tex={tex} />
+                    </div>
+                  </td>
+                  <td>
+                    <Meter value={fwd.ema} />
+                  </td>
+                  <td>
+                    <Meter value={inv.ema} />
+                  </td>
+                  <td className="num">{fwd.attempts + inv.attempts}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
       <div className="card table-card">

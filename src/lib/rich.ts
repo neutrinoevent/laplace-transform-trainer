@@ -1,11 +1,11 @@
 /**
- * Rich text is prose with `$math$` and `` `code` `` spans. Almost every string
+ * Rich text is prose with `$math$`, `` `code` `` and `*emphasis*` spans. Almost every string
  * in the case library and in generated solutions is a sentence with an
  * expression in the middle of it, so this is the default text format rather
  * than a special case. A backslash escapes either delimiter.
  */
 
-export type RichPart = { kind: 'text' | 'math' | 'code'; text: string }
+export type RichPart = { kind: 'text' | 'math' | 'code' | 'em'; text: string }
 
 export function splitRich(text: string): RichPart[] {
   const out: RichPart[] = []
@@ -17,16 +17,21 @@ export function splitRich(text: string): RichPart[] {
   }
   while (i < text.length) {
     const ch = text[i]
-    if (ch === '\\' && (text[i + 1] === '$' || text[i + 1] === '`')) {
+    if (ch === '\\' && (text[i + 1] === '$' || text[i + 1] === '`' || text[i + 1] === '*')) {
       buf += text[i + 1]
       i += 2
       continue
     }
-    if (ch === '$' || ch === '`') {
+    if (ch === '$' || ch === '`' || ch === '*') {
       const end = text.indexOf(ch, i + 1)
-      if (end > i) {
+      // A lone delimiter with no partner stays literal, so prose that happens to
+      // contain one is not silently swallowed.
+      if (end > i + 1) {
         flush()
-        out.push({ kind: ch === '$' ? 'math' : 'code', text: text.slice(i + 1, end) })
+        out.push({
+          kind: ch === '$' ? 'math' : ch === '`' ? 'code' : 'em',
+          text: text.slice(i + 1, end),
+        })
         i = end + 1
         continue
       }

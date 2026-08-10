@@ -44,6 +44,15 @@ const button = (label: string): HTMLButtonElement => {
   return el
 }
 
+/** A chip inside a mode bar — distinct from a tab that may share its label. */
+const chip = (label: string): HTMLButtonElement => {
+  const el = [...container.querySelectorAll<HTMLButtonElement>('.scope-bar .chip')].find(
+    (b) => b.textContent?.trim() === label,
+  )
+  if (!el) throw new Error(`no chip labelled ${label}`)
+  return el
+}
+
 const click = (el: HTMLElement) =>
   act(() => el.dispatchEvent(new MouseEvent('click', { bubbles: true })))
 
@@ -113,6 +122,7 @@ describe('app shell', () => {
     for (const [label, selector] of [
       ['Drill', '.problem-card'],
       ['Match', '.board'],
+      ['Shifts', '.pair-half'],
       ['Derivatives', '.expansion'],
       ['Review', '.problem-card'],
       ['Progress', '.stat-row'],
@@ -122,6 +132,47 @@ describe('app shell', () => {
       click(tab(label))
       expect(container.querySelector(selector), label).not.toBeNull()
     }
+  })
+
+  it('teaches both translation theorems on one page, with the figures', () => {
+    click(tab('Shifts'))
+    // The pairing is the point: both statements, side by side.
+    expect(container.querySelectorAll('.pair-half')).toHaveLength(2)
+    expect(container.querySelectorAll('.figure')).toHaveLength(2)
+
+    for (const [label, marker] of [
+      ['Theorem 7.3.1', 'First Translation Theorem'],
+      ['Definition 7.3.1', 'Unit Step Function'],
+      ['Theorem 7.3.2', 'Second Translation Theorem'],
+    ] as const) {
+      click(button(label))
+      expect(container.querySelector('[role="dialog"]')?.textContent, label).toContain(marker)
+      click(button('×'))
+    }
+
+    click(button('Drill this →'))
+    expect(container.querySelector('.problem-card')).not.toBeNull()
+  })
+
+  it('answers a translation question against its own item', () => {
+    click(tab('Shifts'))
+    click(chip('Drill'))
+    click(container.querySelectorAll<HTMLElement>('.option')[0])
+    expect(container.querySelector('.feedback')).not.toBeNull()
+    expect(container.querySelectorAll('.derivation-step').length).toBeGreaterThan(0)
+    const ids = Object.keys(loadProgress().byId)
+    expect(ids).toHaveLength(1)
+    expect(ids[0]).toMatch(/^shift:(first|second):(forward|inverse)$/)
+  })
+
+  it('mixes translated rows into the ordinary drill only when asked', () => {
+    click(tab('Drill'))
+    const toggle = chip('+ Shifts')
+    expect(toggle.className).not.toContain('chip-active')
+    click(toggle)
+    expect(chip('+ Shifts').className).toContain('chip-active')
+    // Still a working question after the switch.
+    expect(container.querySelector('.problem-tex')).not.toBeNull()
   })
 
   it('walks the derivative rule from statement to drill', () => {

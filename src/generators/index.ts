@@ -14,6 +14,7 @@ import { fTex, invLap, lap, sTex } from '../lib/expr'
 import { makeRng, randomRng, type RNG } from '../lib/rng'
 import { deriveForward, deriveInverse, identify, needsFixup } from './derive'
 import { forwardMutations, inverseMutations } from './mutations'
+import { shiftItemId, translateTerm } from './shift'
 import { itemId, type Choice, type Direction, type Problem } from './types'
 
 export * from './types'
@@ -150,7 +151,20 @@ function assemble(
   return {
     direction,
     forms: terms.map((t) => t.form),
-    itemIds: [...new Set(terms.map((t) => itemId(t.form, direction)))],
+    // A translated problem exercises the row and the theorem that translated
+    // it, so it reports into both.
+    itemIds: [
+      ...new Set([
+        ...terms.map((t) => itemId(t.form, direction)),
+        ...terms.flatMap((t) =>
+          t.shift
+            ? [shiftItemId('first', direction)]
+            : t.delay
+              ? [shiftItemId('second', direction)]
+              : [],
+        ),
+      ]),
+    ],
     promptTex,
     statementTex: `${promptTex} \\;=\\; ?`,
     question: QUESTION[direction],
@@ -241,6 +255,8 @@ export interface GenOptions {
   mastery: Map<string, number>
   /** Combinations of two rows unlock once the basics hold. */
   allowCombo: boolean
+  /** Mix in translated forms — Theorems 7.3.1 and 7.3.2 — when asked for. */
+  allowShifts?: boolean
   optionCount?: number
   /** Avoid handing back the row that was just answered. */
   excludeForm?: FormId | null
@@ -279,9 +295,31 @@ export function nextProblem(o: GenOptions): Problem {
   const partners = scope.filter((f) => f !== chosen.form)
   const count = o.optionCount ?? 4
 
+  // A translated row is a single-row problem: the point is the translation, and
+  // a second unrelated term would only bury it.
+  if (o.allowShifts && !combo && rng.bool(0.45)) {
+    return buildTranslated(rng, chosen.form, chosen.dir, count)
+  }
+
   return chosen.dir === 'forward'
     ? buildForward(rng, chosen.form, partners, combo, count)
     : buildInverse(rng, chosen.form, partners, combo, count)
+}
+
+/** One row of the table, translated, posed through the ordinary drill. */
+function buildTranslated(
+  rng: RNG,
+  form: FormId,
+  direction: Direction,
+  optionCount: number,
+): Problem {
+  const base =
+    direction === 'forward'
+      ? forwardTerm(rng, form, false)
+      : inverseTerm(rng, form, false, rng.bool(0.4))
+  const term = translateTerm(rng, base)
+  const inner = direction === 'forward' ? fTex([term]) : sTex([term])
+  return assemble([term], direction, inner, rng, optionCount)
 }
 
 // ---------------------------------------------------------------------------

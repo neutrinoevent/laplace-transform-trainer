@@ -5,6 +5,7 @@ import { Drill } from './components/Drill'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
 import { Review } from './components/Review'
+import { Shifts } from './components/Shifts'
 import { Table } from './components/Table'
 import type { FormId } from './data/forms'
 import {
@@ -20,7 +21,15 @@ import {
 } from './store/progress'
 import { loadPrefs, savePrefs, type Prefs } from './store/prefs'
 
-type View = 'table' | 'drill' | 'match' | 'derivatives' | 'review' | 'progress' | 'about'
+type View =
+  | 'table'
+  | 'drill'
+  | 'match'
+  | 'shifts'
+  | 'derivatives'
+  | 'review'
+  | 'progress'
+  | 'about'
 type Theme = 'light' | 'dark' | null
 
 const THEME_KEY = 'laplace-trainer-theme'
@@ -29,6 +38,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'table', label: 'Table' },
   { id: 'drill', label: 'Drill' },
   { id: 'match', label: 'Match' },
+  { id: 'shifts', label: 'Shifts' },
   { id: 'derivatives', label: 'Derivatives' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
@@ -135,6 +145,9 @@ export default function App() {
             onAnswer={onAnswer}
             onBoard={onBoard}
           />
+        ) : null}
+        {view === 'shifts' ? (
+          <Shifts progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />
         ) : null}
         {view === 'derivatives' ? (
           <Derivatives progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />

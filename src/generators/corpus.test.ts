@@ -176,6 +176,56 @@ describe('generated problems', () => {
   })
 })
 
+describe('translated rows mixed into the ordinary drill', () => {
+  it('appear only when asked for, and credit both the row and the theorem', () => {
+    const mastery = new Map<string, number>()
+    const plain = Array.from({ length: 120 }, (_, i) =>
+      nextProblem({ scope: null, direction: 'both', mastery, allowCombo: false, seed: i + 1 }),
+    )
+    expect(plain.every((p) => p.terms.every((t) => !t.shift && !t.delay))).toBe(true)
+
+    const mixed = Array.from({ length: 200 }, (_, i) =>
+      nextProblem({
+        scope: null,
+        direction: 'both',
+        mastery,
+        allowCombo: false,
+        allowShifts: true,
+        seed: i + 1,
+      }),
+    )
+    const translated = mixed.filter((p) => p.terms.some((t) => t.shift || t.delay))
+    expect(translated.length).toBeGreaterThan(30)
+    for (const p of translated) {
+      expect(p.terms).toHaveLength(1)
+      expect(p.itemIds.some((id) => id.startsWith('shift:'))).toBe(true)
+      expect(p.itemIds.some((id) => !id.startsWith('shift:'))).toBe(true)
+      for (const tex of everyTexOf(p)) expect(renders(tex), tex).toBe(true)
+      // The worked solution names the theorem rather than misdescribing the row.
+      const labels = p.derivation.map((s) => s.label).join(' ')
+      expect(labels).toMatch(/7\.3\.[12]/)
+    }
+  })
+
+  it('never puts an exponential multiple on a row that would absorb it', () => {
+    const mastery = new Map<string, number>()
+    for (let seed = 1; seed <= 300; seed++) {
+      const p = nextProblem({
+        scope: null,
+        direction: 'both',
+        mastery,
+        allowCombo: false,
+        allowShifts: true,
+        seed,
+      })
+      for (const t of p.terms) {
+        if (t.shift) expect(['power', 'sin', 'cos', 'sinh', 'cosh']).toContain(t.form)
+        expect(Boolean(t.shift) && Boolean(t.delay)).toBe(false)
+      }
+    }
+  })
+})
+
 describe('two-row combinations', () => {
   it('produces the shared-denominator split, and inverts it correctly', () => {
     const splits: Problem[] = []

@@ -10,6 +10,7 @@
 
 import { FORMS, type FormId } from './forms'
 import { GENERAL_TEX } from './derivatives'
+import { FIRST_TEX, SECOND_STEP_TEX, SECOND_TEX } from './shifts'
 import { invLap, lap } from '../lib/expr'
 import { itemId, type Direction } from '../generators/types'
 
@@ -68,6 +69,26 @@ export const RULE_CARDS: Card[] = [
     promptTex: `${lap('f^{(n)}(t)')} \\;=\\; ?`,
     answerTex: GENERAL_TEX.replace('\\mathcal{L}\\{f^{(n)}(t)\\} = ', ''),
     note: 'In every subtracted term the power of $s$ and the order of the derivative at $0$ sum to $n-1$, and there is one term for each order from $0$ to $n-1$.',
+  },
+  {
+    id: 'rule:first-translation',
+    form: null,
+    direction: null,
+    section: '7.3.1',
+    label: 'First translation theorem',
+    promptTex: `${lap('e^{at}f(t)')} \\;=\\; ?`,
+    answerTex: FIRST_TEX.replace('\\mathcal{L}\\{e^{at}f(t)\\} = ', ''),
+    note: 'Replace every $s$ in $F(s)$ by $s-a$ — including an $s$ in the numerator, which is the one most often left behind.',
+  },
+  {
+    id: 'rule:second-translation',
+    form: null,
+    direction: null,
+    section: '7.3.2',
+    label: 'Second translation theorem',
+    promptTex: `${lap('f(t-a)\\,\\mathcal{U}(t-a)')} \\;=\\; ?`,
+    answerTex: SECOND_TEX.replace('\\mathcal{L}\\{f(t-a)\\,\\mathcal{U}(t-a)\\} = ', ''),
+    note: `It applies only to the row itself running on $t-a$. On its own, ${'$' + SECOND_STEP_TEX + '$'}.`,
   },
   {
     id: 'rule:fixup',

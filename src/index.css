@@ -654,6 +654,8 @@ code {
   font-size: 17px;
   overflow-x: auto;
   padding: 3px 0;
+  /* A worked line scrolls if it must; it never folds and orphans a bracket. */
+  white-space: nowrap;
 }
 
 .derivation-text {
@@ -1002,6 +1004,106 @@ code {
   padding: 10px 0 6px;
   font-size: 17px;
   overflow-x: auto;
+}
+
+/* ---- the translation theorems ---- */
+
+.pair-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.pair-half {
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+}
+
+.pair-half .rule-tex {
+  padding: 8px 0 6px;
+}
+
+.pair-half p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.figure-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 4px 0 8px;
+}
+
+.figure {
+  margin: 0;
+}
+
+.fig {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+}
+
+.fig-axis {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.fig-guide {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.65;
+}
+
+/* The untranslated curve, kept faint so the moved one reads as the subject. */
+.fig-ghost {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+  opacity: 0.75;
+}
+
+.fig-curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.fig-dot {
+  fill: var(--accent);
+}
+
+.fig-open {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.fig-label {
+  fill: var(--muted);
+  font-size: 10px;
+  font-family: 'KaTeX_Math', Georgia, serif;
+  font-style: italic;
+}
+
+.fig-caption {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.fig-caption em {
+  font-family: 'KaTeX_Math', Georgia, serif;
+  font-style: italic;
 }
 
 /* ---- the derivative rule ---- */
@@ -1362,7 +1464,9 @@ code {
 @media (max-width: 760px) {
   .options,
   .options-3,
-  .rule-grid {
+  .rule-grid,
+  .pair-grid,
+  .figure-row {
     grid-template-columns: 1fr;
   }
 

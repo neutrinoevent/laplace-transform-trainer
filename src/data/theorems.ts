@@ -80,4 +80,35 @@ export const THEOREMS: Record<string, Theorem> = {
     ],
     note: 'where $F(s) = \\mathcal{L}\\{f(t)\\}$.',
   },
+  '7.3.1': {
+    id: '7.3.1',
+    number: 'Theorem 7.3.1',
+    title: 'First Translation Theorem',
+    lead: 'If $\\mathcal{L}\\{f(t)\\} = F(s)$ and $a$ is any real number, then',
+    items: [{ letter: '', tex: '\\mathcal{L}\\{e^{at}f(t)\\} = F(s - a).' }],
+    note: 'For emphasis it is sometimes useful to use the symbolism $\\mathcal{L}\\{e^{at}f(t)\\} = \\mathcal{L}\\{f(t)\\}\\big|_{s \\to s-a}$, where $s \\to s-a$ means that in the Laplace transform $F(s)$ of $f(t)$ we replace the symbol $s$ wherever it appears by $s - a$.',
+  },
+  'D7.3.1': {
+    id: 'D7.3.1',
+    number: 'Definition 7.3.1',
+    title: 'Unit Step Function',
+    lead: 'The unit step function $\\mathcal{U}(t-a)$ is defined to be',
+    items: [
+      {
+        letter: '',
+        tex: '\\mathcal{U}(t-a) = \\begin{cases} 0, & 0 \\le t < a \\\\ 1, & t \\ge a. \\end{cases}',
+      },
+    ],
+    note: 'It is defined only on the nonnegative $t$-axis, since that is all the Laplace transform is concerned with. In a broader sense $\\mathcal{U}(t-a) = 0$ for $t < a$.',
+  },
+  '7.3.2': {
+    id: '7.3.2',
+    number: 'Theorem 7.3.2',
+    title: 'Second Translation Theorem',
+    lead: 'If $F(s) = \\mathcal{L}\\{f(t)\\}$ and $a > 0$, then',
+    items: [
+      { letter: '', tex: '\\mathcal{L}\\{f(t-a)\\,\\mathcal{U}(t-a)\\} = e^{-as}F(s).' },
+    ],
+    note: 'Taking $f(t) = 1$, so that $F(s) = 1/s$, gives the transform of a unit step on its own: $\\mathcal{L}\\{\\mathcal{U}(t-a)\\} = e^{-as}/s$.',
+  },
 }
