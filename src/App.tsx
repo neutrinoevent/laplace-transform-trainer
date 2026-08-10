@@ -148,7 +148,14 @@ export default function App() {
       </main>
 
       <footer className="footer muted">
-        Zill 9e, Theorems 7.1.1 and 7.2.1 — local-first, no server, no accounts.
+        © 2026 Alexander Nichols ·{' '}
+        <a
+          href="https://github.com/neutrinoevent/laplace-transform-trainer/blob/main/LICENSE"
+          target="_blank"
+          rel="noreferrer"
+        >
+          MIT License
+        </a>
       </footer>
     </div>
   )
