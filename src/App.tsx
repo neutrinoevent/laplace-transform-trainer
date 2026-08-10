@@ -147,16 +147,7 @@ export default function App() {
         {view === 'about' ? <About /> : null}
       </main>
 
-      <footer className="footer muted">
-        © 2026 Alexander Nichols ·{' '}
-        <a
-          href="https://github.com/neutrinoevent/laplace-transform-trainer/blob/main/LICENSE"
-          target="_blank"
-          rel="noreferrer"
-        >
-          MIT License
-        </a>
-      </footer>
+      <footer className="footer muted">© 2026 Alexander Nichols · Old Dominion University</footer>
     </div>
   )
 }
