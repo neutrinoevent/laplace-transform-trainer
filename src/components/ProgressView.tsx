@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FORMS } from '../data/forms'
-import { RULE_CARDS } from '../data/cards'
+import { CARD_BY_ID, RULE_CARDS } from '../data/cards'
+import { DERIV_ITEM } from '../generators/derivative'
 import { itemId } from '../generators/types'
 import { TIER_LABEL, overallScore, tierFor } from '../lib/mastery'
 import {
@@ -9,7 +10,7 @@ import {
   statsFor,
   type ProgressState,
 } from '../store/progress'
-import { Tex } from './Tex'
+import { Rich, Tex } from './Tex'
 
 function Meter({ value }: { value: number }) {
   return (
@@ -105,7 +106,7 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                 </tr>
               )
             })}
-            {RULE_CARDS.map((c) => {
+            {RULE_CARDS.filter((c) => c.id !== 'rule:derivative').map((c) => {
               const s = statsFor(progress, c.id)
               return (
                 <tr key={c.id}>
@@ -121,6 +122,70 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                 </tr>
               )
             })}
+          </tbody>
+        </table>
+
+      </div>
+
+      <div className="card table-card">
+        <h2 className="section-title">Transforms of derivatives</h2>
+        <p className="meta-note" style={{ marginBottom: 12 }}>
+          Theorem 7.2.2, drilled two ways: producing the expansion, and using it to turn an
+          initial-value problem into a formula for <Tex tex="Y(s)" />.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th>Mastery</th>
+              <th className="num">Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              {
+                id: DERIV_ITEM.transform,
+                name: 'Transform',
+                blurb: 'Write $\\mathcal{L}\\{y^{(n)}\\}$ in terms of $Y(s)$',
+              },
+              {
+                id: DERIV_ITEM.solve,
+                name: 'Solve',
+                blurb: 'An initial-value problem to a formula for $Y(s)$',
+              },
+            ].map((row) => {
+              const st = statsFor(progress, row.id)
+              return (
+                <tr key={row.id}>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{row.name}</div>
+                    <div className="meta-note">
+                      <Rich text={row.blurb} />
+                    </div>
+                  </td>
+                  <td>
+                    <Meter value={st.ema} />
+                  </td>
+                  <td className="num">{st.attempts}</td>
+                </tr>
+              )
+            })}
+            {(() => {
+              const card = CARD_BY_ID.get('rule:derivative')
+              const st = statsFor(progress, 'rule:derivative')
+              return card ? (
+                <tr>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{card.label}</div>
+                    <div className="meta-note">Review card only</div>
+                  </td>
+                  <td>
+                    <span className={`tier-chip tier-${tierFor(st)}`}>{TIER_LABEL[tierFor(st)]}</span>
+                  </td>
+                  <td className="num">{st.reps}</td>
+                </tr>
+              ) : null
+            })()}
           </tbody>
         </table>
 

@@ -27,6 +27,10 @@ export function About() {
           <Rich text="— timed recognition. Producing $k/(s^2+k^2)$ and recognizing it on sight are different skills." />
         </li>
         <li>
+          <strong>Derivatives</strong>{' '}
+          <Rich text="— Theorem 7.2.2 three ways: the pattern, with the invariant that fixes it made visible; producing $\mathcal{L}\{y^{(n)}\}$; and using it to turn an initial-value problem into a formula for $Y(s)$." />
+        </li>
+        <li>
           <strong>Review</strong> — spaced repetition on the rows stated generically, so they are
           still there at the exam.
         </li>
@@ -43,7 +47,7 @@ export function About() {
         Not in this version
       </h3>
       <p>
-        <Rich text="The translation theorems, derivatives of a transform, transforms of derivatives, unit step functions, convolution, and partial fractions beyond splitting one shared denominator. Those build on these seven rows; the point of v1 is that the seven are automatic first." />
+        <Rich text="The translation theorems, derivatives of a transform, unit step functions, convolution, and partial fractions beyond splitting one shared denominator — so the Solve drill stops at a formula for $Y(s)$ and does not invert it." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

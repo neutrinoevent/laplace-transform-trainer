@@ -8,6 +8,10 @@
  */
 
 import { CARD_BY_ID, CARDS } from '../data/cards'
+import { DERIV_ITEM } from '../generators/derivative'
+
+/** Items that are drilled but never scheduled for review. */
+const DRILL_ONLY = new Set<string>([DERIV_ITEM.transform, DERIV_ITEM.solve])
 
 export interface ItemStats {
   attempts: number
@@ -253,7 +257,8 @@ export function importProgress(json: string): ProgressState | null {
     if (parsed.version !== 1 || typeof parsed.byId !== 'object' || parsed.byId === null) return null
     const byId: Record<string, ItemStats> = {}
     for (const [id, s] of Object.entries(parsed.byId)) {
-      if (CARD_BY_ID.has(id) && typeof s.attempts === 'number') byId[id] = { ...emptyStats(), ...s }
+      const known = CARD_BY_ID.has(id) || DRILL_ONLY.has(id)
+      if (known && typeof s.attempts === 'number') byId[id] = { ...emptyStats(), ...s }
     }
     const next: ProgressState = { ...emptyProgress(), ...parsed, byId, version: 1 }
     saveProgress(next)

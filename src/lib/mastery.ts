@@ -1,4 +1,5 @@
 import { FORM_IDS, type FormId } from '../data/forms'
+import { DERIV_ITEM } from '../generators/derivative'
 import { itemId, type Direction } from '../generators/types'
 import { statsFor, type ProgressState } from '../store/progress'
 
@@ -27,9 +28,13 @@ export function score(p: ProgressState, form: FormId, dir: Direction): number {
   return statsFor(p, itemId(form, dir)).ema
 }
 
-/** Mean mastery across every row in both directions — the headline number. */
+/** Mean mastery across everything the trainer drills — the headline number. */
 export function overallScore(p: ProgressState): number {
-  const ids = FORM_IDS.flatMap((f) => [itemId(f, 'forward'), itemId(f, 'inverse')])
+  const ids = [
+    ...FORM_IDS.flatMap((f) => [itemId(f, 'forward'), itemId(f, 'inverse')]),
+    DERIV_ITEM.transform,
+    DERIV_ITEM.solve,
+  ]
   return ids.reduce((sum, id) => sum + statsFor(p, id).ema, 0) / ids.length
 }
 

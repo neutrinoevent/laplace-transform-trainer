@@ -10,11 +10,21 @@ export interface Prefs {
   scope: FormId[] | null
   direction: Direction | 'both'
   response: Response
+  /** Which face of the derivative rule was last open. */
+  derivView: 'rule' | 'transform' | 'solve'
+  /** Transform drills: initial values as symbols, or as numbers. */
+  derivSymbolic: boolean
 }
 
 const KEY = 'laplace-trainer-prefs-v1'
 
-export const defaultPrefs = (): Prefs => ({ scope: null, direction: 'both', response: 'auto' })
+export const defaultPrefs = (): Prefs => ({
+  scope: null,
+  direction: 'both',
+  response: 'auto',
+  derivView: 'rule',
+  derivSymbolic: true,
+})
 
 export function loadPrefs(): Prefs {
   try {

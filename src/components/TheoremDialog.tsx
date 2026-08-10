@@ -65,16 +65,18 @@ export function TheoremDialog({ id, onClose }: { id: string; onClose: () => void
           ) : null}
 
           <div className="theorem-panel">
-            <div className="theorem-lead-item">
+            <div className={rest.length ? 'theorem-lead-item' : 'theorem-lead-item theorem-only'}>
               <TheoremLine item={first} />
             </div>
-            <div className="theorem-grid">
-              {rest.map((item) => (
-                <div key={item.letter} className="theorem-item">
-                  <TheoremLine item={item} />
-                </div>
-              ))}
-            </div>
+            {rest.length ? (
+              <div className="theorem-grid">
+                {rest.map((item) => (
+                  <div key={item.letter} className="theorem-item">
+                    <TheoremLine item={item} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {theorem.note ? (
@@ -98,7 +100,7 @@ function TheoremLine({ item }: { item: (typeof THEOREMS)[string]['items'][number
   const tex = item.condition ? `${item.tex},\\quad ${item.condition}` : item.tex
   return (
     <>
-      <span className="theorem-letter">({item.letter})</span>
+      {item.letter ? <span className="theorem-letter">({item.letter})</span> : null}
       <span className="theorem-tex">
         <Tex tex={tex} display />
       </span>

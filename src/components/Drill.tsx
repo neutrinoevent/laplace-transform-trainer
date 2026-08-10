@@ -5,6 +5,7 @@ import { checkAnswer, previewOf, type Verdict } from '../lib/check'
 import { autoOptionCount, TIER_LABEL, tierFor, shouldType } from '../lib/mastery'
 import { masteryMap, statsFor, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
+import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
 import { Rail } from './Rail'
 import { ScopeBar } from './ScopeBar'
@@ -66,7 +67,6 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
   const [revealed, setRevealed] = useState(false)
   const [hintShown, setHintShown] = useState(false)
   const [recent, setRecent] = useState<boolean[]>([])
-  const inputRef = useRef<HTMLInputElement>(null)
 
   // The generator reads progress, but a fresh answer must not swap the problem
   // out from under the student, so it is read through a ref.
@@ -142,9 +142,6 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
     setTries((n) => n + 1)
   }, [problem, typed, tries, settled, onAnswer])
 
-  useEffect(() => {
-    if (mode === 'type' && !settled) inputRef.current?.focus()
-  }, [mode, settled, problem])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -245,90 +242,33 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
         <div className="divider" />
 
         {mode === 'choose' ? (
-          <div className={choices.length === 3 ? 'options options-3' : 'options'}>
-            {choices.map((c, i) => {
-              const isCorrect = i === correctIndex
-              const cls =
-                picked === null
-                  ? 'option'
-                  : isCorrect
-                    ? 'option option-correct'
-                    : picked === i
-                      ? 'option option-wrong'
-                      : 'option option-dim'
-              return (
-                <button key={c.tex} className={cls} onClick={() => pick(i)} disabled={picked !== null}>
-                  <span className="option-key">{i + 1}</span>
-                  <span className="option-body">
-                    <Tex tex={c.tex} display />
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          <Options choices={choices} picked={picked} correctIndex={correctIndex} onPick={pick} />
         ) : (
-          <div>
-            <label className="answer-label" htmlFor="answer">
-              Your answer, as a function of <code>{problem.variable}</code>
-            </label>
-            <div className="answer-row">
-              <input
-                id="answer"
-                ref={inputRef}
-                className="answer-input"
-                value={typed}
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                placeholder={problem.variable === 's' ? '3/(s^2+9)' : '(1/3)sin(3t)'}
-                onChange={(e) => setTyped(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter') return
-                  e.preventDefault()
-                  if (settled) advance()
-                  else submit()
-                }}
-                disabled={settled}
-              />
-              <button className="btn btn-primary" onClick={submit} disabled={settled || !typed.trim()}>
-                Check
-              </button>
-            </div>
-            <div className="preview">
-              {preview && 'tex' in preview ? (
-                <>
-                  <span className="preview-label">read as</span>
-                  <Tex tex={preview.tex} />
-                </>
-              ) : preview ? (
-                <span className="meta-note">{preview.error}</span>
-              ) : null}
-            </div>
-            <p className="syntax">
-              <code>^</code> powers <code>*</code> or juxtaposition <code>e^(-2t)</code>{' '}
-              <code>sin 3t</code> <code>t^3/6</code> — any equivalent form is accepted.
-            </p>
-          </div>
+          <AnswerBox
+            value={typed}
+            onChange={setTyped}
+            onSubmit={submit}
+            onAdvance={advance}
+            settled={settled}
+            label={
+              <>
+                Your answer, as a function of <code>{problem.variable}</code>
+              </>
+            }
+            placeholder={problem.variable === 's' ? '3/(s^2+9)' : '(1/3)sin(3t)'}
+            preview={preview}
+            syntax="`^` powers, `*` or juxtaposition, `e^(-2t)`, `sin 3t`, `t^3/6` — any equivalent form is accepted."
+          />
         )}
 
         {mode === 'choose' && picked !== null ? (
-          <div className={correct ? 'feedback feedback-good' : 'feedback feedback-bad'}>
-            {correct ? 'Correct.' : 'Not that one.'}
-          </div>
+          <Feedback tone={correct ? 'good' : 'bad'}>{correct ? 'Correct.' : 'Not that one.'}</Feedback>
         ) : null}
 
         {mode === 'type' && verdict ? (
-          <div
-            className={
-              verdict.ok
-                ? 'feedback feedback-good'
-                : verdict.code === 'scaled'
-                  ? 'feedback feedback-near'
-                  : 'feedback feedback-bad'
-            }
-          >
+          <Feedback tone={verdict.ok ? 'good' : verdict.code === 'scaled' ? 'near' : 'bad'}>
             {verdict.ok ? 'Correct.' : <Rich text={verdict.message} />}
-          </div>
+          </Feedback>
         ) : null}
 
         {mode === 'choose' && picked !== null && picked !== correctIndex && choices[picked].why ? (

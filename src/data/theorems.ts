@@ -67,4 +67,17 @@ export const THEOREMS: Record<string, Theorem> = {
     ],
     note: 'In evaluating inverse transforms, it often happens that a function of $s$ under consideration does not match exactly the form of a Laplace transform $F(s)$ given in a table. It may be necessary to “fix up” the function of $s$ by multiplying and dividing by an appropriate constant.',
   },
+  '7.2.2': {
+    id: '7.2.2',
+    number: 'Theorem 7.2.2',
+    title: 'Transform of a Derivative',
+    lead: 'If $f, f^{\\prime}, \\ldots, f^{(n-1)}$ are continuous on $[0, \\infty)$ and are of exponential order and if $f^{(n)}(t)$ is piecewise continuous on $[0, \\infty)$, then',
+    items: [
+      {
+        letter: '',
+        tex: '\\mathcal{L}\\{f^{(n)}(t)\\} = s^n F(s) - s^{n-1}f(0) - s^{n-2}f^{\\prime}(0) - \\cdots - f^{(n-1)}(0)',
+      },
+    ],
+    note: 'where $F(s) = \\mathcal{L}\\{f(t)\\}$.',
+  },
 }

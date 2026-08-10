@@ -10,3 +10,6 @@ export const sTex = (terms: Term[]): string => texSum(terms.map(termSTex))
 export const lap = (inner: string): string => `\\mathcal{L}\\left\\{${inner}\\right\\}`
 
 export const invLap = (inner: string): string => `\\mathcal{L}^{-1}\\left\\{${inner}\\right\\}`
+
+/** Unsized braces, for short operands where `\left\{` opens a visible gap. */
+export const lapTight = (inner: string): string => `\\mathcal{L}\\{${inner}\\}`

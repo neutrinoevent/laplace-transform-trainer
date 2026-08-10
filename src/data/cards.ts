@@ -9,6 +9,7 @@
  */
 
 import { FORMS, type FormId } from './forms'
+import { GENERAL_TEX } from './derivatives'
 import { invLap, lap } from '../lib/expr'
 import { itemId, type Direction } from '../generators/types'
 
@@ -57,6 +58,16 @@ export const RULE_CARDS: Card[] = [
     promptTex: `${lap('\\alpha f(t) + \\beta g(t)')} \\;=\\; ?`,
     answerTex: '\\alpha F(s) + \\beta G(s)',
     note: 'It runs both ways: $\\mathcal{L}^{-1}$ is linear too, which is what lets you split a fraction and invert the pieces one at a time.',
+  },
+  {
+    id: 'rule:derivative',
+    form: null,
+    direction: null,
+    section: '7.2.2',
+    label: 'Transform of a derivative',
+    promptTex: `${lap('f^{(n)}(t)')} \\;=\\; ?`,
+    answerTex: GENERAL_TEX.replace('\\mathcal{L}\\{f^{(n)}(t)\\} = ', ''),
+    note: 'In every subtracted term the power of $s$ and the order of the derivative at $0$ sum to $n-1$, and there is one term for each order from $0$ to $n-1$.',
   },
   {
     id: 'rule:fixup',

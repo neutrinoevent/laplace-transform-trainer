@@ -94,6 +94,7 @@ describe('app shell', () => {
     for (const [label, selector] of [
       ['Drill', '.problem-card'],
       ['Match', '.board'],
+      ['Derivatives', '.expansion'],
       ['Review', '.problem-card'],
       ['Progress', '.stat-row'],
       ['About', '.about'],
@@ -102,6 +103,53 @@ describe('app shell', () => {
       click(tab(label))
       expect(container.querySelector(selector), label).not.toBeNull()
     }
+  })
+
+  it('walks the derivative rule from statement to drill', () => {
+    click(tab('Derivatives'))
+    // The expansion writes out n subtracted terms and the invariant beside them.
+    expect(container.querySelectorAll('.invariant tbody tr')).toHaveLength(2)
+    const sums = [...container.querySelectorAll('.invariant-sum')].map((e) => e.textContent)
+    expect(new Set(sums).size).toBe(1)
+
+    // Order five gives five terms, and the invariant still holds down the column.
+    const orderChips = [...container.querySelectorAll<HTMLElement>('.mode-bar')]
+      .find((bar) => bar.textContent?.startsWith('Order'))!
+      .querySelectorAll<HTMLElement>('.chip')
+    click(orderChips[4])
+    expect(container.querySelectorAll('.invariant tbody tr')).toHaveLength(5)
+    expect(new Set([...container.querySelectorAll('.invariant-sum')].map((e) => e.textContent)).size).toBe(1)
+
+    click(button('Theorem 7.2.2'))
+    expect(container.querySelector('[role="dialog"]')?.textContent).toContain(
+      'Transform of a Derivative',
+    )
+    click(button('×'))
+
+    click(button('Drill this →'))
+    expect(container.querySelector('.problem-card')).not.toBeNull()
+  })
+
+  it('answers a derivative question and records it against its own item', () => {
+    click(tab('Derivatives'))
+    click(button('Transform'))
+    const options = container.querySelectorAll<HTMLElement>('.option')
+    expect(options.length).toBeGreaterThanOrEqual(2)
+    click(options[0])
+    expect(container.querySelector('.feedback')).not.toBeNull()
+    expect(container.querySelectorAll('.derivation-step').length).toBeGreaterThan(0)
+    expect(Object.keys(loadProgress().byId)).toEqual(['deriv:transform'])
+  })
+
+  it('solves an initial-value problem for Y(s)', () => {
+    click(tab('Derivatives'))
+    click(button('Solve'))
+    expect(container.querySelector('.given-row')).not.toBeNull()
+    click(container.querySelectorAll<HTMLElement>('.option')[0])
+    // The worked solution ends by isolating Y(s).
+    const steps = [...container.querySelectorAll('.derivation-label')].map((e) => e.textContent)
+    expect(steps.at(-1)).toContain('Solve')
+    expect(Object.keys(loadProgress().byId)).toEqual(['deriv:solve'])
   })
 
   it('answers a drill question and records it', () => {

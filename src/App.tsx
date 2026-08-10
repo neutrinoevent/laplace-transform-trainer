@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { About } from './components/About'
+import { Derivatives } from './components/Derivatives'
 import { Drill } from './components/Drill'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
@@ -19,7 +20,7 @@ import {
 } from './store/progress'
 import { loadPrefs, savePrefs, type Prefs } from './store/prefs'
 
-type View = 'table' | 'drill' | 'match' | 'review' | 'progress' | 'about'
+type View = 'table' | 'drill' | 'match' | 'derivatives' | 'review' | 'progress' | 'about'
 type Theme = 'light' | 'dark' | null
 
 const THEME_KEY = 'laplace-trainer-theme'
@@ -28,6 +29,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'table', label: 'Table' },
   { id: 'drill', label: 'Drill' },
   { id: 'match', label: 'Match' },
+  { id: 'derivatives', label: 'Derivatives' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
   { id: 'about', label: 'About' },
@@ -133,6 +135,9 @@ export default function App() {
             onAnswer={onAnswer}
             onBoard={onBoard}
           />
+        ) : null}
+        {view === 'derivatives' ? (
+          <Derivatives progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />
         ) : null}
         {view === 'review' ? (
           <Review progress={progress} prefs={prefs} onPrefs={updatePrefs} onGrade={onGrade} />

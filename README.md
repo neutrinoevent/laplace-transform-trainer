@@ -1,8 +1,9 @@
 # Laplace Trainer
 
-A drill for the seven basic Laplace transform pairs — **Theorem 7.1.1** and **Theorem 7.2.1** in
-Zill, *A First Course in Differential Equations*, 9e — in both directions, with the constant
-fix-up made the explicit object of practice.
+A drill for the operational core of Laplace transforms as Zill sets it out in
+*A First Course in Differential Equations*, 9e: the seven basic pairs of **Theorem 7.1.1** and
+**Theorem 7.2.1**, in both directions and with the constant fix-up made the explicit object of
+practice, and the transform of a derivative, **Theorem 7.2.2**, which is what puts them to work.
 
 Notation follows the book exactly: `t` and `s` for the variables, `n` for the power, `a` for the
 exponential rate, `k` for the frequency, and the rows labelled (a)–(g) in the order the book gives
@@ -50,6 +51,11 @@ So the whole trainer is organised around that gap.
   typed once it holds; the scaffolding fades on its own.
 - **Match** — a timed board pairing f(t) tiles against F(s) tiles. Recognising a form on sight is
   a different skill from producing it, and it is the one an exam leans on.
+- **Derivatives** — Theorem 7.2.2 (§7.2.2), in three faces. *Rule* states it, derives (6) by parts,
+  shows (7) falling out of (6), and writes the expansion out at any order beside a table of the
+  invariant that fixes it. *Transform* drills producing `L{y⁽ⁿ⁾}`, with the initial values left as
+  symbols or substituted as numbers. *Solve* applies it to an initial-value problem and asks for
+  `Y(s)` — which pulls the seven basic rows back in through the forcing function.
 - **Review** — spaced repetition (SM-2 style) over the rows stated generically. Missing a row in
   Drill pulls its card forward.
 - **Progress** — mastery per row per direction, with a backup/restore box.
@@ -72,9 +78,9 @@ under the box shows how the expression was parsed before you commit to it.
 
 ## Not in this version
 
-The translation theorems, derivatives of a transform, transforms of derivatives, unit step
-functions, convolution, and partial fractions beyond splitting one shared denominator. All of
-those build on these seven rows; v1 exists to make the seven automatic first.
+The translation theorems, derivatives of a transform, unit step functions, convolution, and
+partial fractions beyond splitting one shared denominator. The Solve drill therefore stops at a
+formula for `Y(s)` and does not invert it — inverting it is the next section's work.
 
 ## Running it
 
@@ -93,14 +99,16 @@ Progress tab before clearing site data.
 ```
 src/
   data/forms.ts        the seven rows: notation, teaching notes, term rendering and evaluation
-  data/theorems.ts     the two theorems as the book states them, for quoting verbatim
+  data/theorems.ts     the three theorems as the book states them, for quoting verbatim
+  data/derivatives.ts  the derivative rule: equations (6)-(8), its origin, its invariant
   data/cards.ts        the review deck, derived from the rows
   lib/frac.ts          exact rationals, so 1/3! prints as a fraction and not as 0.1666…
   lib/check.ts         parsing and numeric grading of typed answers
   lib/expr.ts          expression-level TeX
+  lib/poly.ts          integer polynomials, for the characteristic polynomial and its roots
   lib/mastery.ts       tiers, and the scaffolding that fades with them
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Review, Progress, About
+  components/          Table, Drill, Match, Derivatives, Review, Progress, About
   store/               localStorage-backed progress and preferences
 ```
 

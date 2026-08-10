@@ -420,6 +420,12 @@ code {
   grid-template-columns: repeat(3, 1fr);
 }
 
+/* Long answers get the full width; comparing them means reading them side by
+   side vertically, not hunting for where each one happened to wrap. */
+.options-1 {
+  grid-template-columns: 1fr;
+}
+
 .option {
   display: flex;
   align-items: center;
@@ -454,6 +460,9 @@ code {
 .option-body {
   overflow-x: auto;
   font-size: 16px;
+  /* An answer that outgrows its box scrolls; it never folds in half. */
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .option-correct {
@@ -542,8 +551,15 @@ code {
 
 .answer-row {
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.answer-prefix {
+  font-size: 17px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .answer-input {
@@ -924,6 +940,11 @@ code {
   overflow-x: auto;
 }
 
+/* A theorem with a single statement carries no list beneath it. */
+.theorem-only {
+  padding-bottom: 0;
+}
+
 .theorem-grid {
   display: grid;
   /* Two columns as the book sets them, collapsing to one when there is no room. */
@@ -980,6 +1001,69 @@ code {
 .rule-tex {
   padding: 10px 0 6px;
   font-size: 17px;
+  overflow-x: auto;
+}
+
+/* ---- the derivative rule ---- */
+
+.expansion {
+  padding: 18px 0 20px;
+  font-size: 20px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.invariant {
+  margin-bottom: 14px;
+}
+
+.invariant td:first-child {
+  font-size: 16px;
+}
+
+/* The whole point of the table: this column never changes down its length. */
+.invariant-sum {
+  color: var(--accent);
+  font-weight: 700;
+  background: var(--accent-soft);
+}
+
+.instances {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.instance {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  overflow-x: auto;
+}
+
+.instance-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.instance-tex {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.given-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  font-size: 16px;
   overflow-x: auto;
 }
 
