@@ -42,6 +42,12 @@ export interface ProgressState {
   newToday: number
   /** Best match-board time in milliseconds, per board size. */
   bestBoard: Record<string, number>
+  /**
+   * Position on the translation-theorem ladder, and the run of results at it.
+   * Null until the ladder is first seeded from whatever evidence exists.
+   */
+  shiftRung: number | null
+  shiftRun: number
 }
 
 export type Grade = 'again' | 'good' | 'easy'
@@ -85,6 +91,8 @@ export function emptyProgress(): ProgressState {
     newDay: dayKey(Date.now()),
     newToday: 0,
     bestBoard: {},
+    shiftRung: null,
+    shiftRun: 0,
   }
 }
 
@@ -94,7 +102,13 @@ export function loadProgress(): ProgressState {
     if (!raw) return emptyProgress()
     const parsed = JSON.parse(raw) as ProgressState
     if (parsed.version !== 1 || typeof parsed.totalAttempts !== 'number') return emptyProgress()
-    return { ...emptyProgress(), ...parsed, bestBoard: parsed.bestBoard ?? {} }
+    return {
+      ...emptyProgress(),
+      ...parsed,
+      bestBoard: parsed.bestBoard ?? {},
+      shiftRung: parsed.shiftRung ?? null,
+      shiftRun: parsed.shiftRun ?? 0,
+    }
   } catch {
     return emptyProgress()
   }
@@ -191,6 +205,14 @@ export function recordGrade(state: ProgressState, id: string, grade: Grade): Pro
     newDay: today,
     newToday: (state.newDay === today ? state.newToday : 0) + (wasNew ? 1 : 0),
   }
+  saveProgress(next)
+  return next
+}
+
+/** Move the translation ladder, keeping it beside the answer that moved it. */
+export function recordRung(state: ProgressState, rung: number, run: number): ProgressState {
+  if (state.shiftRung === rung && state.shiftRun === run) return state
+  const next: ProgressState = { ...state, shiftRung: rung, shiftRun: run }
   saveProgress(next)
   return next
 }

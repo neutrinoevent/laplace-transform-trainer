@@ -1006,6 +1006,73 @@ code {
   overflow-x: auto;
 }
 
+/* ---- the translation ladder ---- */
+
+.ladder {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  padding: 9px 14px 10px;
+  margin-bottom: 12px;
+}
+
+.ladder-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ladder-rungs {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.ladder-pip {
+  width: 22px;
+  height: 4px;
+  background: var(--meter-track);
+}
+
+.ladder-pip-done {
+  background: var(--accent);
+  opacity: 0.45;
+}
+
+.ladder-pip-now {
+  background: var(--accent);
+}
+
+.ladder-name {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent);
+}
+
+.ladder-count {
+  margin-left: auto;
+}
+
+.ladder-blurb {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+/* The row the student already owns, handed over so only the new step remains. */
+.anchor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  font-size: 16px;
+  overflow-x: auto;
+}
+
 /* ---- the translation theorems ---- */
 
 .pair-grid {

@@ -75,6 +75,16 @@ const release = (key: string) =>
     window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }))
   })
 
+/** Render again with a progress state already in storage. */
+function remountWith(progress: unknown) {
+  act(() => root.unmount())
+  localStorage.setItem('laplace-trainer-progress-v1', JSON.stringify(progress))
+  act(() => {
+    root = createRoot(container)
+    root.render(<App />)
+  })
+}
+
 describe('app shell', () => {
   it('opens on the table, with all seven rows', () => {
     expect(container.querySelector('.brand-name')?.textContent).toBe('Laplace Trainer')
@@ -152,6 +162,67 @@ describe('app shell', () => {
 
     click(button('Drill this →'))
     expect(container.querySelector('.problem-card')).not.toBeNull()
+  })
+
+  it('starts a newcomer to shifts on the anchored rung', () => {
+    click(tab('Shifts'))
+    click(chip('Drill'))
+    // Guided is the default: no theorem or direction chips to decide about.
+    expect(chip('Guided').className).toContain('chip-active')
+    expect(container.querySelector('.ladder-name')?.textContent).toBe('Anchored')
+    // The row it is built on is given, so only the translation is being asked for.
+    expect(container.querySelector('.anchor')).not.toBeNull()
+  })
+
+  it('hands the controls back on request', () => {
+    click(tab('Shifts'))
+    click(chip('Drill'))
+    expect(container.textContent).not.toContain('Theorem')
+    click(chip('Choose mine'))
+    expect(container.querySelector('.ladder')).toBeNull()
+    expect(chip('s-axis')).toBeTruthy()
+    expect(chip('t-axis')).toBeTruthy()
+  })
+
+  it('opens a returning fluent student at the full section, unprompted', () => {
+    const byId: Record<string, unknown> = {}
+    for (const id of [
+      'shift:first:forward',
+      'shift:first:inverse',
+      'shift:second:forward',
+      'shift:second:inverse',
+    ]) {
+      byId[id] = {
+        attempts: 12,
+        correct: 11,
+        streak: 4,
+        ema: 0.92,
+        lastSeen: null,
+        reps: 0,
+        lapses: 0,
+        ease: 2.3,
+        intervalDays: 0,
+        due: null,
+      }
+    }
+    remountWith({
+      version: 1,
+      byId,
+      totalAttempts: 48,
+      totalCorrect: 44,
+      currentStreak: 4,
+      bestStreak: 9,
+      newDay: '2026-1-1',
+      newToday: 0,
+      bestBoard: {},
+      shiftRung: null,
+      shiftRun: 0,
+    })
+    click(tab('Shifts'))
+    click(chip('Drill'))
+    expect(container.querySelector('.ladder-name')?.textContent).toBe('Everything')
+    // No scaffolding for someone who has already shown they do not need it.
+    expect(container.querySelector('.anchor')).toBeNull()
   })
 
   it('answers a translation question against its own item', () => {

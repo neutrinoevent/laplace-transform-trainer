@@ -28,7 +28,7 @@ export function About() {
         </li>
         <li>
           <strong>Shifts</strong>{' '}
-          <Rich text="— the two translation theorems taught together, because they are one idea in two domains: an exponential in $t$ slides the transform along the $s$-axis, an exponential in $s$ delays the function along the $t$-axis. The unit step is taught here too, with figures, since it is the notation the second theorem is written in." />
+          <Rich text="— the two translation theorems taught together, because they are one idea in two domains: an exponential in $t$ slides the transform along the $s$-axis, an exponential in $s$ delays the function along the $t$-axis. The unit step is taught here too, with figures, since it is the notation the second theorem is written in. The drill builds up on its own: it starts with the untranslated row given, so the only new step is the translation, and widens as you show you no longer need the scaffold." />
         </li>
         <li>
           <strong>Derivatives</strong>{' '}

@@ -59,8 +59,9 @@ So the whole trainer is organised around that gap.
   one idea in two domains: an exponential in `t` slides the transform along the `s`-axis, an
   exponential in `s` delays the function along the `t`-axis. The unit step is taught here too, with
   drawn figures, since it is the notation the second theorem is written in. Drilling covers both
-  theorems in both directions, including the inverse case that only yields to completing the square.
-  A `+ Shifts` switch in the ordinary Drill mixes translated rows in with the plain ones.
+  theorems in both directions, including the inverse case that only yields to completing the square,
+  and **builds up to that on its own** — see below. A `+ Shifts` switch in the ordinary Drill mixes
+  translated rows in with the plain ones.
 - **Derivatives** — Theorem 7.2.2 (§7.2.2), in three faces. *Rule* states it, derives (6) by parts,
   shows (7) falling out of (6), and writes the expansion out at any order beside a table of the
   invariant that fixes it. *Transform* drills producing `L{y⁽ⁿ⁾}`, with the initial values left as
@@ -69,6 +70,26 @@ So the whole trainer is organised around that gap.
 - **Review** — spaced repetition (SM-2 style) over the rows stated generically. Missing a row in
   Drill pulls its card forward.
 - **Progress** — mastery per row per direction, with a backup/restore box.
+
+## Building up to §7.3
+
+§7.3 is the first section that assumes the earlier ones, so the Shifts drill is a ladder rather
+than a flat set. Nobody is asked what they know: the rung is inferred, shown, and moved on evidence.
+
+| | | |
+|---|---|---|
+| 1 | **Anchored** | One theorem at a time, with the untranslated row *given* — so the only new step is the translation itself. Small translations, no fix-ups, forward first. |
+| 2 | **On its own** | One theorem at a time, both directions, without the row handed over. |
+| 3 | **Both mixed** | Both theorems interleaved, so deciding *which one applies* is part of the question. Fix-ups return. |
+| 4 | **Everything** | Translations hidden inside quadratics, alongside the fix-ups. The full section. |
+
+Three right in a row promotes; two wrong demotes. A fluent student reaches the top in nine
+questions, and a returning one does not start over — the ladder is seeded from whatever evidence
+already exists, including translated rows met in the ordinary Drill, which report into the same
+items. Below the mixing rung the theorem served is whichever of the two is going worse.
+
+`Guided` is the default and needs no configuring. `Choose mine` hands back the theorem and
+direction chips for anyone who would rather drive.
 
 ## Answer checking
 
@@ -120,6 +141,7 @@ src/
   lib/expr.ts          expression-level TeX
   lib/poly.ts          integer polynomials, for the characteristic polynomial and its roots
   lib/mastery.ts       tiers, and the scaffolding that fades with them
+  lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
   components/          Table, Drill, Match, Shifts, Derivatives, Review, Progress, About
   store/               localStorage-backed progress and preferences

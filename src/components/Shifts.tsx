@@ -6,8 +6,9 @@ import {
   type Theorem,
 } from '../generators/shift'
 import { checkScoped, previewOf, type Verdict } from '../lib/check'
+import { RUNGS, TOP_RUNG, rungProgress, seedRung, stepLadder } from '../lib/ladder'
 import { autoOptionCount, TIER_LABEL, shouldType, tierFor } from '../lib/mastery'
-import { statsFor, type ProgressState } from '../store/progress'
+import { masteryMap, statsFor, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
 import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
@@ -39,10 +40,20 @@ interface ShiftsProps {
   prefs: Prefs
   onPrefs: (next: Prefs) => void
   onAnswer: (ids: string[], correct: boolean) => void
+  onRung: (rung: number, run: number) => void
 }
 
-export function Shifts({ progress, prefs, onPrefs, onAnswer }: ShiftsProps) {
+/** The rung in force, seeded from existing evidence the first time. */
+function ladderOf(progress: ProgressState) {
+  return {
+    rung: progress.shiftRung ?? seedRung(progress),
+    run: progress.shiftRung === null ? 0 : progress.shiftRun,
+  }
+}
+
+export function Shifts({ progress, prefs, onPrefs, onAnswer, onRung }: ShiftsProps) {
   const learning = prefs.shiftView === 'rule'
+  const ladder = ladderOf(progress)
 
   return (
     <section>
@@ -69,6 +80,37 @@ export function Shifts({ progress, prefs, onPrefs, onAnswer }: ShiftsProps) {
         </div>
         {!learning ? (
           <div className="mode-bar">
+            <span className="eyebrow">Set</span>
+            <button
+              className={prefs.shiftGuided ? 'chip chip-active' : 'chip'}
+              onClick={() => onPrefs({ ...prefs, shiftGuided: true })}
+              title="Let the questions follow what you have shown you can do"
+            >
+              Guided
+            </button>
+            <button
+              className={!prefs.shiftGuided ? 'chip chip-active' : 'chip'}
+              onClick={() => onPrefs({ ...prefs, shiftGuided: false })}
+              title="Choose the theorem and direction yourself"
+            >
+              Choose mine
+            </button>
+            <span style={{ width: 10 }} />
+            <span className="eyebrow">Answer</span>
+            {RESPONSE_CHIPS.map((r) => (
+              <button
+                key={r.id}
+                title={r.title}
+                className={prefs.response === r.id ? 'chip chip-active' : 'chip'}
+                onClick={() => onPrefs({ ...prefs, response: r.id })}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {!learning && !prefs.shiftGuided ? (
+          <div className="mode-bar">
             <span className="eyebrow">Theorem</span>
             {THEOREMS.map((t) => (
               <button
@@ -90,18 +132,6 @@ export function Shifts({ progress, prefs, onPrefs, onAnswer }: ShiftsProps) {
                 {d.id === 'both' ? d.label : <Tex tex={d.label} />}
               </button>
             ))}
-            <span style={{ width: 10 }} />
-            <span className="eyebrow">Answer</span>
-            {RESPONSE_CHIPS.map((r) => (
-              <button
-                key={r.id}
-                title={r.title}
-                className={prefs.response === r.id ? 'chip chip-active' : 'chip'}
-                onClick={() => onPrefs({ ...prefs, response: r.id })}
-              >
-                {r.label}
-              </button>
-            ))}
           </div>
         ) : null}
       </div>
@@ -114,15 +144,55 @@ export function Shifts({ progress, prefs, onPrefs, onAnswer }: ShiftsProps) {
         />
       ) : (
         <ShiftDrill
-          key={`${prefs.shiftTheorem}-${prefs.shiftDirection}`}
+          key={`${prefs.shiftGuided}-${prefs.shiftTheorem}-${prefs.shiftDirection}`}
+          guided={prefs.shiftGuided}
           theorem={prefs.shiftTheorem}
           direction={prefs.shiftDirection}
           response={prefs.response}
           progress={progress}
+          ladder={ladder}
           onAnswer={onAnswer}
+          onRung={onRung}
         />
       )}
     </section>
+  )
+}
+
+/**
+ * Where the questions are coming from, said plainly. The ladder is automatic,
+ * so the least it can do is show its working.
+ */
+function LadderStrip({ ladder }: { ladder: { rung: number; run: number } }) {
+  const rung = RUNGS[Math.max(0, Math.min(TOP_RUNG, ladder.rung))]
+  const atTop = ladder.rung >= TOP_RUNG
+  return (
+    <div className="ladder">
+      <div className="ladder-head">
+        <span className="eyebrow">Building up</span>
+        <span className="ladder-rungs" aria-hidden="true">
+          {RUNGS.map((r) => (
+            <i
+              key={r.id}
+              className={
+                r.id < ladder.rung
+                  ? 'ladder-pip ladder-pip-done'
+                  : r.id === ladder.rung
+                    ? 'ladder-pip ladder-pip-now'
+                    : 'ladder-pip'
+              }
+            />
+          ))}
+        </span>
+        <span className="ladder-name">{rung.name}</span>
+        <span className="meta-note ladder-count">
+          {atTop
+            ? 'the full section'
+            : `${rung.id + 1} of ${RUNGS.length} · ${Math.round(rungProgress(ladder) * 100)}% to the next`}
+        </span>
+      </div>
+      <p className="ladder-blurb">{rung.blurb}</p>
+    </div>
   )
 }
 
@@ -145,17 +215,23 @@ function trim(problem: ShiftProblem, count: number) {
 }
 
 function ShiftDrill({
+  guided,
   theorem,
   direction,
   response,
   progress,
+  ladder,
   onAnswer,
+  onRung,
 }: {
+  guided: boolean
   theorem: Theorem | 'both'
   direction: ShiftDirection | 'both'
   response: Response
   progress: ProgressState
+  ladder: { rung: number; run: number }
   onAnswer: (ids: string[], correct: boolean) => void
+  onRung: (rung: number, run: number) => void
 }) {
   const [dealt, setDealt] = useState<Dealt | null>(null)
   const [picked, setPicked] = useState<number | null>(null)
@@ -168,13 +244,45 @@ function ShiftDrill({
 
   const progressRef = useRef(progress)
   progressRef.current = progress
+  // The ladder moves as answers come in, but the question on screen must not be
+  // rebuilt underneath the student when it does.
+  const ladderRef = useRef(ladder)
+  ladderRef.current = ladder
 
   const build = useCallback((): Dealt => {
-    const problem = nextShiftProblem({ theorem, direction })
-    const tier = tierFor(statsFor(progressRef.current, problem.itemId))
+    const state = progressRef.current
+    const rung = ladderRef.current.rung
+    const problem = nextShiftProblem(
+      guided
+        ? {
+            // Below the mixing rung only one theorem is served anyway, so a
+            // request from the Learn page — "drill this one" — is honoured
+            // there without the ladder losing charge of the difficulty.
+            theorem: rung < 2 && theorem !== 'both' ? theorem : 'auto',
+            direction: 'auto',
+            rung,
+            mastery: masteryMap(state),
+          }
+        : { theorem, direction },
+    )
+    const tier = tierFor(statsFor(state, problem.itemId))
     const mode = response === 'auto' ? (shouldType(tier) ? 'type' : 'choose') : response
     return { problem, mode, tier, ...trim(problem, autoOptionCount(tier)) }
-  }, [theorem, direction, response])
+  }, [guided, theorem, direction, response])
+
+  /** One place for "an answer happened", so the ladder never misses one. */
+  const settle = useCallback(
+    (itemId: string, correct: boolean) => {
+      onAnswer([itemId], correct)
+      setRecent((r) => [...r.slice(-19), correct])
+      if (guided) {
+        const next = stepLadder(ladderRef.current, correct)
+        ladderRef.current = next
+        onRung(next.rung, next.run)
+      }
+    },
+    [guided, onAnswer, onRung],
+  )
 
   const reset = useCallback(() => {
     setPicked(null)
@@ -202,11 +310,9 @@ function ShiftDrill({
     (index: number) => {
       if (!dealt || picked !== null) return
       setPicked(index)
-      const correct = index === dealt.correctIndex
-      onAnswer([dealt.problem.itemId], correct)
-      setRecent((r) => [...r.slice(-19), correct])
+      settle(dealt.problem.itemId, index === dealt.correctIndex)
     },
-    [dealt, picked, onAnswer],
+    [dealt, picked, settle],
   )
 
   const submit = useCallback(() => {
@@ -214,12 +320,9 @@ function ShiftDrill({
     const p = dealt.problem
     const v = checkScoped(typed, { symbols: p.symbols, target: p.target, points: p.points })
     setVerdict(v)
-    if (tries === 0) {
-      onAnswer([p.itemId], v.ok)
-      setRecent((r) => [...r.slice(-19), v.ok])
-    }
+    if (tries === 0) settle(p.itemId, v.ok)
     setTries((n) => n + 1)
-  }, [dealt, typed, tries, settled, onAnswer])
+  }, [dealt, typed, tries, settled, settle])
 
   useAnswerKeys({
     active: dealt !== null,
@@ -241,6 +344,7 @@ function ShiftDrill({
 
   return (
     <>
+      {guided ? <LadderStrip ladder={ladderRef.current} /> : null}
       <div className="run-bar">
         <span className="run-count">
           {recent.filter(Boolean).length}/{recent.length || 0}
@@ -277,6 +381,13 @@ function ShiftDrill({
         <p className="question-line">
           <Rich text={problem.question} />
         </p>
+
+        {problem.anchorTex ? (
+          <div className="anchor">
+            <span className="eyebrow">You already have</span>
+            <Tex tex={problem.anchorTex} display />
+          </div>
+        ) : null}
 
         <div className="problem-tex">
           <Tex tex={problem.statementTex} block />

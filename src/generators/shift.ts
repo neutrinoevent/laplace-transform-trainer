@@ -56,6 +56,11 @@ export interface ShiftProblem {
   completeSquare: boolean
   question: string
   statementTex: string
+  /**
+   * The untranslated row, given outright. At the first rung the only new step
+   * is the translation, so the row it is built on is not also being tested.
+   */
+  anchorTex?: string
   prefixTex: string
   symbols: Symbols
   target: (scope: Record<string, number>) => number
@@ -75,6 +80,7 @@ const SHIFTABLE: FormId[] = ['power', 'sin', 'cos', 'sinh', 'cosh']
 const DELAYABLE: FormId[] = ['one', 'power', 'exp', 'sin', 'cos', 'sinh', 'cosh']
 
 const SHIFTS = [1, 2, 2, 3, 3, 4, 5, -1, -2, -2, -3, -3, -4]
+const GENTLE_SHIFTS = [1, 2, 2, 3, -1, -2, -2, -3]
 const DELAYS = [1, 1, 2, 2, 3, 4]
 const SMALL = [1, 1, 1, 2, 3, 4, 5]
 
@@ -89,6 +95,17 @@ function baseTerm(rng: RNG, form: FormId, coef = frac(1)): Term {
     default:
       return { form, coef, k: rng.pick([1, 2, 2, 3, 3, 4, 5]) }
   }
+}
+
+/**
+ * The row this problem is built on, transformed and handed over. It is the
+ * bridge from the table a student already knows to the theorem that moves it:
+ * with the row given, the only thing left to do is the translation.
+ */
+function anchorFor(plain: Term, direction: ShiftDirection): string {
+  return direction === 'forward'
+    ? `${lapTight(fTex([plain]))} = ${sTex([plain])}`
+    : `${invLap(sTex([plain]))} = ${fTex([plain])}`
 }
 
 // ---------------------------------------------------------------------------
@@ -217,18 +234,25 @@ function expandedNumerator(term: Term): Poly {
   return hasS ? [-coef.n * term.shift!, coef.n] : [coef.n]
 }
 
-function firstProblem(rng: RNG, direction: ShiftDirection, optionCount: number): ShiftProblem {
+function firstProblem(
+  rng: RNG,
+  direction: ShiftDirection,
+  optionCount: number,
+  rung: number,
+): ShiftProblem {
   const form = rng.pick(SHIFTABLE)
-  const shift = rng.pick(SHIFTS)
-  const coef = frac(direction === 'forward' ? rng.pick(SMALL) : 1)
+  // Small translations first; the arithmetic should not be the obstacle.
+  const shift = rng.pick(rung === 0 ? GENTLE_SHIFTS : SHIFTS)
+  const coef = frac(direction === 'forward' && rung > 0 ? rng.pick(SMALL) : 1)
   const term: Term = { ...baseTerm(rng, form, coef), shift }
   const plain: Term = { ...term, shift: undefined }
   const poles = polesOf([term])
 
   // Half the inverse problems hide the translation inside a quadratic, which is
-  // the case that needs completing the square before the row is even visible.
+  // the case that needs completing the square before the row is even visible —
+  // and which only appears at the top rung.
   const completeSquare =
-    direction === 'inverse' && (form === 'sin' || form === 'cos') && rng.bool(0.5)
+    rung >= 3 && direction === 'inverse' && (form === 'sin' || form === 'cos') && rng.bool(0.5)
 
   const givenTex = completeSquare
     ? `\\dfrac{${polyTex(expandedNumerator(term))}}{${polyTex(expandedDenominator(term))}}`
@@ -257,6 +281,7 @@ function firstProblem(rng: RNG, direction: ShiftDirection, optionCount: number):
       ? 'Find the transform. Your answer is a function of $s$.'
       : 'Find the inverse transform. Your answer is a function of $t$.',
     statementTex,
+    anchorTex: rung === 0 ? anchorFor(plain, direction) : undefined,
     prefixTex: forward ? lapTight(inner) + ' =' : invLap(inner) + ' =',
     symbols: { primary: forward ? 's' : 't', allowed: [forward ? 's' : 't'] },
     target: forward ? (o) => evalS([term], o.s) : (o) => evalF([term], o.t),
@@ -330,7 +355,12 @@ function firstDerivation(
 // Second translation theorem
 // ---------------------------------------------------------------------------
 
-function secondProblem(rng: RNG, direction: ShiftDirection, optionCount: number): ShiftProblem {
+function secondProblem(
+  rng: RNG,
+  direction: ShiftDirection,
+  optionCount: number,
+  rung: number,
+): ShiftProblem {
   const form = rng.pick(DELAYABLE)
   const delay = rng.pick(DELAYS)
   const skeleton = baseTerm(rng, form)
@@ -338,10 +368,12 @@ function secondProblem(rng: RNG, direction: ShiftDirection, optionCount: number)
 
   // Forward problems fix an integer coefficient in t; inverse problems fix an
   // integer numerator in s and let the fix-up fall out, as everywhere else.
+  // Below the mixing rung the numerator is the one the row already wants, so a
+  // missing fix-up never masquerades as a missing translation.
   const coef =
     direction === 'forward'
-      ? frac(rng.pick(SMALL))
-      : frac(rng.bool(0.45) ? own : rng.pick(SMALL), own)
+      ? frac(rung > 0 ? rng.pick(SMALL) : 1)
+      : frac(rung >= 2 && rng.bool(0.55) ? rng.pick(SMALL) : own, own)
   const term: Term = { ...skeleton, coef, delay }
   const poles = polesOf([term])
 
@@ -359,6 +391,7 @@ function secondProblem(rng: RNG, direction: ShiftDirection, optionCount: number)
       ? 'Find the transform. Your answer is a function of $s$.'
       : 'Find the inverse transform. Your answer is a function of $t$.',
     statementTex: `${forward ? lapTight(inner) : invLap(inner)} \\;=\\; ?`,
+    anchorTex: rung === 0 ? anchorFor({ ...term, delay: undefined }, direction) : undefined,
     prefixTex: `${forward ? lapTight(inner) : invLap(inner)} =`,
     symbols: forward
       ? { primary: 's', allowed: ['s'] }
@@ -430,21 +463,77 @@ function secondDerivation(term: Term, direction: ShiftDirection): Step[] {
 // ---------------------------------------------------------------------------
 
 export interface ShiftOptions {
-  theorem: Theorem | 'both'
-  direction: ShiftDirection | 'both'
+  /** `auto` lets the rung choose; anything else is the student overriding it. */
+  theorem: Theorem | 'both' | 'auto'
+  direction: ShiftDirection | 'both' | 'auto'
+  /** 0..3; see `lib/ladder`. Defaults to the full section. */
+  rung?: number
+  /** Mastery per shift item, so the weaker skill comes up more often. */
+  mastery?: Map<string, number>
   optionCount?: number
   seed?: number
 }
 
+/**
+ * Below the mixing rung only one theorem is in play at a time, and it is the
+ * one going worse — practising what already works teaches nothing.
+ */
+function chooseTheorem(rng: RNG, mastery: Map<string, number> | undefined): Theorem {
+  const score = (t: Theorem) =>
+    (['forward', 'inverse'] as const).reduce(
+      (sum, d) => sum + (mastery?.get(shiftItemId(t, d)) ?? 0),
+      0,
+    ) / 2
+  const first = score('first')
+  const second = score('second')
+  if (Math.abs(first - second) < 0.12) return rng.bool() ? 'first' : 'second'
+  return first < second ? 'first' : 'second'
+}
+
+/** Forward before inverse, until forward holds. */
+function chooseDirection(
+  rng: RNG,
+  theorem: Theorem,
+  mastery: Map<string, number> | undefined,
+  rung: number,
+): ShiftDirection {
+  if (rung === 0) {
+    const forward = mastery?.get(shiftItemId(theorem, 'forward')) ?? 0
+    if (forward < 0.6) return 'forward'
+  }
+  return rng.bool() ? 'forward' : 'inverse'
+}
+
 export function nextShiftProblem(o: ShiftOptions): ShiftProblem {
   const rng = o.seed === undefined ? randomRng() : makeRng(o.seed)
-  const theorem = o.theorem === 'both' ? (rng.bool() ? 'first' : 'second') : o.theorem
+  const rung = o.rung ?? 3
+
+  const theorem =
+    o.theorem === 'auto'
+      ? rung >= 2
+        ? rng.bool()
+          ? 'first'
+          : 'second'
+        : chooseTheorem(rng, o.mastery)
+      : o.theorem === 'both'
+        ? rng.bool()
+          ? 'first'
+          : 'second'
+        : o.theorem
+
   const direction =
-    o.direction === 'both' ? (rng.bool() ? 'forward' : 'inverse') : o.direction
+    o.direction === 'auto'
+      ? chooseDirection(rng, theorem, o.mastery, rung)
+      : o.direction === 'both'
+        ? rng.bool()
+          ? 'forward'
+          : 'inverse'
+        : o.direction
+
   const count = o.optionCount ?? 4
   return theorem === 'first'
-    ? firstProblem(rng, direction, count)
-    : secondProblem(rng, direction, count)
+    ? firstProblem(rng, direction, count, rung)
+    : secondProblem(rng, direction, count, rung)
 }
 
 /**

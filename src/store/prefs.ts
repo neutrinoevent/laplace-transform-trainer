@@ -16,6 +16,8 @@ export interface Prefs {
   derivSymbolic: boolean
   /** Which face of the translation theorems was last open. */
   shiftView: 'rule' | 'drill'
+  /** Let the ladder choose what comes next; off hands the chips back. */
+  shiftGuided: boolean
   shiftTheorem: 'both' | 'first' | 'second'
   shiftDirection: 'both' | 'forward' | 'inverse'
   /** Mix translated forms into the ordinary seven-row drill. */
@@ -31,6 +33,7 @@ export const defaultPrefs = (): Prefs => ({
   derivView: 'rule',
   derivSymbolic: true,
   shiftView: 'rule',
+  shiftGuided: true,
   shiftTheorem: 'both',
   shiftDirection: 'both',
   shiftsInDrill: false,

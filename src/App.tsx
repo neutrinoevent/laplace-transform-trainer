@@ -15,6 +15,7 @@ import {
   recordAttempt,
   recordBoard,
   recordGrade,
+  recordRung,
   resetProgress,
   type Grade,
   type ProgressState,
@@ -92,6 +93,7 @@ export default function App() {
     setProgress((p) => recordAttempt(p, ids, correct))
   const onGrade = (id: string, grade: Grade) => setProgress((p) => recordGrade(p, id, grade))
   const onBoard = (size: number, ms: number) => setProgress((p) => recordBoard(p, size, ms))
+  const onRung = (rung: number, run: number) => setProgress((p) => recordRung(p, rung, run))
   const onImport = (json: string): boolean => {
     const next = importProgress(json)
     if (next) setProgress(next)
@@ -147,7 +149,13 @@ export default function App() {
           />
         ) : null}
         {view === 'shifts' ? (
-          <Shifts progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />
+          <Shifts
+            progress={progress}
+            prefs={prefs}
+            onPrefs={updatePrefs}
+            onAnswer={onAnswer}
+            onRung={onRung}
+          />
         ) : null}
         {view === 'derivatives' ? (
           <Derivatives progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />
