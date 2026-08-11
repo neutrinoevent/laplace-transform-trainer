@@ -14,7 +14,7 @@ import { fTex, invLap, lap, sTex } from '../lib/expr'
 import { makeRng, randomRng, type RNG } from '../lib/rng'
 import { deriveForward, deriveInverse, identify, needsFixup } from './derive'
 import { forwardMutations, inverseMutations } from './mutations'
-import { shiftItemId, translateTerm } from './shift'
+import { canShift, secondReady, shiftItemId, translateTerm } from './shift'
 import { itemId, type Choice, type Direction, type Problem } from './types'
 
 export * from './types'
@@ -364,8 +364,12 @@ function dealFor(
   // A translated row is a single-row problem: the point is the translation, and
   // a second unrelated term would only bury it. It also poses a different skill
   // from the one owed a fix-up, so it stands aside for that.
-  if (o.allowShifts && !combo && !forceHard && rng.bool(0.45)) {
-    return buildTranslated(rng, form, dir, count)
+  // Until the unit step is reachable only the s-axis shift is on offer, so a row
+  // that cannot carry one is left to its ordinary form rather than posed as a
+  // translated problem with no translation in it.
+  const allowDelay = secondReady(o.mastery)
+  if (o.allowShifts && !combo && !forceHard && (allowDelay || canShift(form)) && rng.bool(0.45)) {
+    return buildTranslated(rng, form, dir, count, allowDelay)
   }
 
   return dir === 'forward'
@@ -379,12 +383,13 @@ function buildTranslated(
   form: FormId,
   direction: Direction,
   optionCount: number,
+  allowDelay = true,
 ): Problem {
   const base =
     direction === 'forward'
       ? forwardTerm(rng, form, false)
       : inverseTerm(rng, form, false, rng.bool(0.4))
-  const term = translateTerm(rng, base)
+  const term = translateTerm(rng, base, allowDelay)
   const inner = direction === 'forward' ? fTex([term]) : sTex([term])
   return assemble([term], direction, inner, rng, optionCount)
 }

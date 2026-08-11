@@ -1148,6 +1148,17 @@ code {
   overflow-x: auto;
 }
 
+/* The step function needs a sentence beside it, so this one stacks. */
+.anchor-step {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.anchor-step .meta-note {
+  margin: 0;
+}
+
 /* ---- the translation theorems ---- */
 
 .pair-grid {

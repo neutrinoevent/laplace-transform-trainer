@@ -167,9 +167,18 @@ export function termNumer(term: Term): { coef: Frac; hasS: boolean } {
   }
 }
 
-/** `e^{-2s}`, the factor a delayed row contributes. */
-export const delayTex = (d?: number): string =>
-  !d ? '' : `e^{-${d === 1 ? '' : d}s}`
+/**
+ * `e^{-2s}`, the factor a delayed row contributes.
+ *
+ * A negative delay is not a real problem, but it is a real distractor — the one
+ * that gets the sign in the exponent backwards — so it has to print as `e^{2s}`
+ * rather than as a double minus.
+ */
+export const delayTex = (d?: number): string => {
+  if (!d) return ''
+  const mag = Math.abs(d) === 1 ? '' : Math.abs(d)
+  return `e^{${d < 0 ? '' : '-'}${mag}s}`
+}
 
 /** The s-domain term, split so a sum can fold the sign into its join. */
 export function termSTex(term: Term): { neg: boolean; tex: string } {

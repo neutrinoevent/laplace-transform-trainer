@@ -72,10 +72,13 @@ describe('moving on evidence', () => {
 })
 
 describe('what each rung serves', () => {
-  const sample = (rung: number, n = 120) =>
+  const sample = (rung: number, n = 120, mastery?: Map<string, number>) =>
     Array.from({ length: n }, (_, i) =>
-      nextShiftProblem({ theorem: 'auto', direction: 'auto', rung, seed: i + 1 }),
+      nextShiftProblem({ theorem: 'auto', direction: 'auto', rung, mastery, seed: i + 1 }),
     )
+
+  /** Someone who has the s-axis shift, so the unit step is reachable. */
+  const past7_3_1 = new Map([['shift:first:forward', 0.8]])
 
   it('anchors every problem at the first rung, and nowhere else', () => {
     expect(sample(0).every((p) => p.anchorTex)).toBe(true)
@@ -91,13 +94,20 @@ describe('what each rung serves', () => {
     expect(sample(3).some((p) => p.completeSquare)).toBe(true)
   })
 
-  it('holds one theorem at a time until the mixing rung', () => {
-    // With no mastery recorded the two theorems are equally weak, so the choice
-    // is random; what matters is that both remain reachable and that the mixing
-    // rung is where they are guaranteed to interleave.
+  it('interleaves both theorems at the mixing rungs, once both are reachable', () => {
     for (const rung of [2, 3]) {
-      const kinds = new Set(sample(rung).map((p) => p.theorem))
+      const kinds = new Set(sample(rung, 120, past7_3_1).map((p) => p.theorem))
       expect(kinds.size, `rung ${rung}`).toBe(2)
+    }
+  })
+
+  it('serves the s-axis theorem alone until it holds, at any rung', () => {
+    // A rung is seeded from evidence, and that evidence can be entirely s-axis
+    // work met in the ordinary drill — so reaching the mixing rung is not on its
+    // own a reason to hand someone the unit step.
+    for (const rung of [0, 1, 2, 3]) {
+      const kinds = new Set(sample(rung).map((p) => p.theorem))
+      expect([...kinds], `rung ${rung}`).toEqual(['first'])
     }
   })
 

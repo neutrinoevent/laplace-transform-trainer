@@ -63,6 +63,11 @@ export interface ShiftProblem {
    * is the translation, so the row it is built on is not also being tested.
    */
   anchorTex?: string
+  /**
+   * What $\mathcal{U}$ means, carried by the problem itself. Only Theorem 7.3.2
+   * needs it, and only while the step function is still new.
+   */
+  stepNote?: StepNote
   prefixTex: string
   symbols: Symbols
   target: (scope: Record<string, number>) => number
@@ -80,6 +85,9 @@ export interface ShiftProblem {
 
 // Rows (a) and (c) absorb an exponential multiple, so they never carry a shift.
 const SHIFTABLE: FormId[] = ['power', 'sin', 'cos', 'sinh', 'cosh']
+
+/** Whether a row can carry an s-axis shift — that is, Theorem 7.3.1 alone. */
+export const canShift = (form: FormId): boolean => SHIFTABLE.includes(form)
 const DELAYABLE: FormId[] = ['one', 'power', 'exp', 'sin', 'cos', 'sinh', 'cosh']
 
 /**
@@ -121,6 +129,20 @@ function anchorFor(plain: Term, direction: ShiftDirection): string {
   return direction === 'forward'
     ? `${lapTight(fTex([plain]))} = ${sTex([plain])}`
     : `${invLap(sTex([plain]))} = ${fTex([plain])}`
+}
+
+/**
+ * What the step function is, at the delay this problem uses.
+ *
+ * Theorem 7.3.1 asks nothing new of the notation; Theorem 7.3.2 asks for a whole
+ * object the seven rows never mention. So the first rung states it outright,
+ * concretely rather than in $a$, instead of leaving it to be looked up.
+ */
+function stepNoteFor(delay: number): StepNote {
+  return {
+    tex: `\\mathcal{U}(t - ${delay}) = \\begin{cases} 0, & 0 \\le t < ${delay} \\\\ 1, & t \\ge ${delay} \\end{cases}`,
+    text: `A switch, off until $t = ${delay}$ and on from there. Multiplying by it holds the function at zero until ${delay}, so the graph is the old one picked up and moved ${delay} to the right.`,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -440,6 +462,10 @@ function secondProblem(
       : 'Find the inverse transform. Your answer is a function of $t$.',
     statementTex: `${forward ? lapTight(inner) : invLap(inner)} \\;=\\; ?`,
     anchorTex: rung === 0 ? anchorFor({ ...term, delay: undefined }, direction) : undefined,
+    // The row was never the unknown here — the step function is. At the first
+    // rung the problem carries what $\mathcal{U}$ means rather than presuming
+    // the Learn page was read first.
+    stepNote: rung === 0 ? stepNoteFor(delay) : undefined,
     prefixTex: `${forward ? lapTight(inner) : invLap(inner)} =`,
     symbols: forward
       ? { primary: 's', allowed: ['s'] }
@@ -514,6 +540,12 @@ function secondDerivation(term: Term, direction: ShiftDirection): Step[] {
 // Selection
 // ---------------------------------------------------------------------------
 
+/** The unit step stated at the delay in play, for a problem that assumes it. */
+export interface StepNote {
+  tex: string
+  text: string
+}
+
 export interface ShiftOptions {
   /** `auto` lets the rung choose; anything else is the student overriding it. */
   theorem: Theorem | 'both' | 'auto'
@@ -529,10 +561,34 @@ export interface ShiftOptions {
 }
 
 /**
- * Below the mixing rung only one theorem is in play at a time, and it is the
- * one going worse — practising what already works teaches nothing.
+ * How much traction the s-axis theorem needs before the t-axis one is offered.
+ * The same bar `chooseDirection` uses to move from forward to inverse.
+ */
+const READY_FOR_SECOND = 0.6
+
+/**
+ * Whether Theorem 7.3.2 is reachable yet.
+ *
+ * The two theorems are not peers, and treating them as one would be a coin flip
+ * is what put the unit step in front of people who had never seen it. Theorem
+ * 7.3.1 introduces no new objects — it is the seven rows plus the substitution
+ * $s \to s-a$. Theorem 7.3.2 needs $\mathcal{U}$: a new function, new notation,
+ * and a piecewise definition to read before the statement means anything. Zill
+ * orders them that way, and so does this.
+ *
+ * The gate is evidence, not a lesson plan: someone who already has the s-axis
+ * shift clears it on their first question and never sees a restriction.
+ */
+export const secondReady = (mastery: Map<string, number> | undefined): boolean =>
+  (mastery?.get(shiftItemId('first', 'forward')) ?? 0) >= READY_FOR_SECOND
+
+/**
+ * Below the mixing rung only one theorem is in play at a time: the s-axis one
+ * until it holds, and after that whichever is going worse — practising what
+ * already works teaches nothing.
  */
 function chooseTheorem(rng: RNG, mastery: Map<string, number> | undefined): Theorem {
+  if (!secondReady(mastery)) return 'first'
   const score = (t: Theorem) =>
     (['forward', 'inverse'] as const).reduce(
       (sum, d) => sum + (mastery?.get(shiftItemId(t, d)) ?? 0),
@@ -562,9 +618,12 @@ export function nextShiftProblem(o: ShiftOptions): ShiftProblem {
   const rng = o.seed === undefined ? randomRng() : makeRng(o.seed)
   const rung = o.rung ?? 3
 
+  // The mixing rungs interleave both theorems, but a rung can be seeded from
+  // s-axis evidence alone, so readiness for the unit step is checked there too.
+  // `Choose mine` is the student overriding this, and is left alone.
   const theorem =
     o.theorem === 'auto'
-      ? rung >= 2
+      ? rung >= 2 && secondReady(o.mastery)
         ? rng.bool()
           ? 'first'
           : 'second'
@@ -596,8 +655,12 @@ export function nextShiftProblem(o: ShiftOptions): ShiftProblem {
  * A translation attached to an ordinary drill problem, when the student has
  * asked for shifted forms to be mixed in.
  */
-export function translateTerm(rng: RNG, term: Term): Term {
-  if (rng.bool(0.5) && SHIFTABLE.includes(term.form)) {
+export function translateTerm(rng: RNG, term: Term, allowDelay = true): Term {
+  // A delay drags in the unit step, so the ordinary drill honours the same
+  // ordering the Shifts ladder does: s-axis first, t-axis once that holds.
+  const shiftable = SHIFTABLE.includes(term.form)
+  if (!allowDelay && !shiftable) return term
+  if ((rng.bool(0.5) || !allowDelay) && shiftable) {
     return { ...term, shift: rng.pick(SHIFTS) }
   }
   return { ...term, delay: rng.pick(DELAYS) }

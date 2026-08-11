@@ -238,6 +238,38 @@ describe('a skill is not mastered on its easy half', () => {
   })
 })
 
+describe('mixing translations into the ordinary drill', () => {
+  const shifted = (mastery: Map<string, number>) => {
+    let delayed = 0
+    let shifted = 0
+    for (let seed = 1; seed <= 200; seed++) {
+      const p = nextProblem({
+        scope: null,
+        direction: 'both',
+        mastery,
+        allowCombo: false,
+        allowShifts: true,
+        seed,
+      })
+      if (p.terms.some((t) => t.delay)) delayed++
+      if (p.terms.some((t) => t.shift)) shifted++
+    }
+    return { delayed, shifted }
+  }
+
+  it('offers the s-axis shift but not the unit step, until the first holds', () => {
+    const seen = shifted(new Map())
+    expect(seen.delayed).toBe(0)
+    expect(seen.shifted).toBeGreaterThan(0)
+  })
+
+  it('mixes both in once it does', () => {
+    const seen = shifted(new Map([['shift:first:forward', 0.8]]))
+    expect(seen.delayed).toBeGreaterThan(0)
+    expect(seen.shifted).toBeGreaterThan(0)
+  })
+})
+
 // ---------------------------------------------------------------------------
 // Sequencing a run
 // ---------------------------------------------------------------------------

@@ -360,6 +360,16 @@ function ShiftDrill({
           </div>
         ) : null}
 
+        {problem.stepNote ? (
+          <div className="anchor anchor-step">
+            <span className="eyebrow">The step function</span>
+            <Tex tex={problem.stepNote.tex} display />
+            <p className="meta-note">
+              <Rich text={problem.stepNote.text} />
+            </p>
+          </div>
+        ) : null}
+
         <div className="problem-tex">
           <Tex tex={problem.statementTex} block />
         </div>

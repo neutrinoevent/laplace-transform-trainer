@@ -129,6 +129,16 @@ than a flat set. Nobody is asked what they know: the rung is inferred, shown, an
 The Fractions drill runs the same machinery over its own four rungs — completing the square, then
 choosing the shape, then distinct factors, then repeated factors and irreducible quadratics.
 
+The two theorems are not peers, so they are not offered as a coin flip. Theorem 7.3.1 introduces
+no new objects — it is the seven rows plus the substitution `s → s−a`. Theorem 7.3.2 needs the unit
+step: a new function, new notation, and a piecewise definition to read before the statement says
+anything, which is why Zill orders them that way. So the s-axis theorem comes first, and the t-axis
+one is offered once the s-axis one holds — at every rung, since a rung can be seeded from s-axis
+work alone. The gate is evidence and not a lesson plan: anyone who already has the shift clears it
+on their first question. The `+ Shifts` toggle in the ordinary Drill follows the same order. And
+because the row was never the unknown in a §7.3.2 problem, the first rung states what `𝒰(t−a)` is
+alongside it, at the delay in play, rather than leaving it to be looked up.
+
 Three right in a row promotes; two wrong demotes. A fluent student reaches the top in nine
 questions, and a returning one does not start over — the ladder is seeded from whatever evidence
 already exists, including translated rows met in the ordinary Drill, which report into the same

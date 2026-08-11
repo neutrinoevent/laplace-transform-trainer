@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import katex from 'katex'
+import { delayTex } from '../data/forms'
 import { splitRich } from '../lib/rich'
 import { checkScoped } from '../lib/check'
-import { nextShiftProblem, STEP_FN, type ShiftProblem } from './shift'
+import { nextShiftProblem, shiftItemId, SHIFT_ITEMS, STEP_FN, type ShiftProblem } from './shift'
 
 function renders(tex: string): boolean {
   try {
@@ -223,5 +224,92 @@ describe('every distractor is a named mistake', () => {
       }
     }
     expect(untagged).toEqual([])
+  })
+})
+
+/**
+ * Theorem 7.3.1 needs only the seven rows and a substitution; Theorem 7.3.2
+ * needs the unit step, a function the table never mentions. Serving them as a
+ * coin flip put $\mathcal{U}$ in front of people on their first question.
+ */
+describe('the s-axis theorem comes before the t-axis one', () => {
+  const fresh = new Map<string, number>()
+  const ready = new Map([[shiftItemId('first', 'forward'), 0.8]])
+  const fluent = new Map(SHIFT_ITEMS.map((id) => [id, 0.9] as const))
+
+  const served = (mastery: Map<string, number>, rung: number) => {
+    const seen = { first: 0, second: 0 }
+    for (let seed = 1; seed <= 120; seed++) {
+      seen[nextShiftProblem({ theorem: 'auto', direction: 'auto', rung, mastery, seed }).theorem]++
+    }
+    return seen
+  }
+
+  it('never serves the unit step to someone with no evidence at all', () => {
+    expect(served(fresh, 0).second).toBe(0)
+  })
+
+  it('holds it back at every rung, since a rung can be seeded from s-axis work alone', () => {
+    for (const rung of [0, 1, 2, 3]) {
+      expect(served(fresh, rung).second, `rung ${rung}`).toBe(0)
+    }
+  })
+
+  it('offers it as soon as the s-axis shift holds, without a lesson to sit through', () => {
+    expect(served(ready, 0).second).toBeGreaterThan(0)
+  })
+
+  it('does not slow down someone who already has both', () => {
+    const seen = served(fluent, 3)
+    expect(seen.first).toBeGreaterThan(0)
+    expect(seen.second).toBeGreaterThan(0)
+  })
+
+  it('leaves the choice alone when the student asked for it themselves', () => {
+    // `Choose mine` with the t-axis theorem selected is not a recommendation.
+    const p = nextShiftProblem({ theorem: 'second', direction: 'forward', mastery: fresh, seed: 3 })
+    expect(p.theorem).toBe('second')
+  })
+
+  it('states what the step function is while it is still new', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const p = nextShiftProblem({ theorem: 'second', direction: 'forward', rung: 0, seed })
+      expect(p.stepNote, p.statementTex).toBeTruthy()
+      // Concretely, at the delay in play — not in terms of an abstract a.
+      const delay = /\\mathcal\{U\}\(t - (\d+)\)/.exec(p.statementTex)?.[1]
+      if (delay) expect(p.stepNote!.tex).toContain(`t - ${delay}`)
+      expect(renders(p.stepNote!.tex)).toBe(true)
+      expect(richRenders(p.stepNote!.text)).toBe(true)
+    }
+  })
+
+  it('drops the statement once the rung moves past it', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      expect(
+        nextShiftProblem({ theorem: 'second', direction: 'forward', rung: 2, seed }).stepNote,
+      ).toBeUndefined()
+    }
+  })
+
+  it('carries no such note for the s-axis theorem, which needs none', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      expect(
+        nextShiftProblem({ theorem: 'first', direction: 'forward', rung: 0, seed }).stepNote,
+      ).toBeUndefined()
+    }
+  })
+})
+
+describe('the delay factor prints its sign once', () => {
+  it('renders a backwards-sign distractor as e^{as}, not as a double minus', () => {
+    expect(delayTex(2)).toBe('e^{-2s}')
+    // The distractor that gets the exponent's sign wrong is a real option a
+    // student can pick, so it has to be legible as one.
+    expect(delayTex(-2)).toBe('e^{2s}')
+    expect(delayTex(-1)).toBe('e^{s}')
+    for (const d of [-4, -3, -2, -1, 1, 2, 3, 4]) {
+      expect(delayTex(d)).not.toContain('--')
+      expect(renders(`\\dfrac{${delayTex(d)}}{s}`), `${d}`).toBe(true)
+    }
   })
 })
