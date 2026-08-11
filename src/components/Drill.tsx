@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FORM_BY_ID, type FormId } from '../data/forms'
-import { nextProblem, type Direction, type Problem } from '../generators'
+import { FORM_BY_ID, FORM_IDS, type FormId } from '../data/forms'
+import { itemId, nextProblem, type Direction, type Problem } from '../generators'
 import { checkAnswer, previewOf, type Verdict } from '../lib/check'
-import { autoOptionCount, TIER_LABEL, tierFor, shouldType } from '../lib/mastery'
-import { masteryMap, statsFor, type ProgressState } from '../store/progress'
+import { uncoveredItems } from '../lib/facets'
+import { autoOptionCount, TIER_LABEL, effectiveTier, shouldType, type Tier } from '../lib/mastery'
+import { diagnose } from '../lib/diagnose'
+import { dueNow, emptyQueue, recordServed, tooRecent, type Queue } from '../lib/queue'
+import { masteryMap, type AttemptDetail, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
 import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
@@ -18,6 +21,9 @@ const DIRECTION_CHIPS: { id: Direction | 'both'; label: string }[] = [
   { id: 'inverse', label: '\\mathcal{L}^{-1}' },
 ]
 
+/** Every row-and-direction the ordinary drill can serve. */
+const ALL_ROW_ITEMS = FORM_IDS.flatMap((f) => [itemId(f, 'forward'), itemId(f, 'inverse')])
+
 const RESPONSE_CHIPS: { id: Response; label: string; title: string }[] = [
   { id: 'auto', label: 'Auto', title: 'Multiple choice while a row is new, typed once it holds' },
   { id: 'choose', label: 'Choose', title: 'Always multiple choice' },
@@ -28,7 +34,7 @@ interface DrillProps {
   progress: ProgressState
   prefs: Prefs
   onPrefs: (next: Prefs) => void
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
 }
 
 /**
@@ -61,7 +67,7 @@ function sectionOf(problem: Problem): string {
 interface Dealt {
   problem: Problem
   mode: 'choose' | 'type'
-  tier: ReturnType<typeof tierFor>
+  tier: Tier
   choices: Problem['choices']
   correctIndex: number
 }
@@ -75,6 +81,8 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
   const [revealed, setRevealed] = useState(false)
   const [hintShown, setHintShown] = useState(false)
   const [recent, setRecent] = useState<boolean[]>([])
+  // Sequencing for this sitting: what came up lately, and what is owed a return.
+  const queueRef = useRef<Queue>(emptyQueue())
 
   // The generator reads progress, but a fresh answer must not swap the problem
   // out from under the student, so it is read through a ref.
@@ -84,6 +92,7 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
   const build = useCallback(
     (exclude: FormId | null): Dealt => {
       const state = progressRef.current
+      const queue = queueRef.current
       const problem = nextProblem({
         scope: prefs.scope,
         direction: prefs.direction,
@@ -91,8 +100,11 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
         allowCombo: true,
         allowShifts: prefs.shiftsInDrill,
         excludeForm: exclude,
+        avoid: tooRecent(queue),
+        prefer: dueNow(queue),
+        uncovered: uncoveredItems(ALL_ROW_ITEMS, state.facets),
       })
-      const tier = tierFor(statsFor(state, problem.itemIds[0]))
+      const tier = effectiveTier(state, problem.itemIds[0])
       const mode =
         prefs.response === 'auto' ? (shouldType(tier) ? 'type' : 'choose') : prefs.response
       return { problem, mode, tier, ...trim(problem, autoOptionCount(tier)) }
@@ -123,33 +135,53 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
   const mode = dealt?.mode ?? 'choose'
   const settled = mode === 'choose' ? picked !== null : verdict?.ok === true || revealed
 
+  /** One place for "an answer happened", so nothing is recorded twice or missed. */
+  const settle = useCallback(
+    (correct: boolean, slip?: AttemptDetail['slip']) => {
+      if (!dealt) return
+      const p = dealt.problem
+      onAnswer(p.itemIds, correct, { slip, facets: p.facets })
+      setRecent((r) => [...r.slice(-19), correct])
+      queueRef.current = recordServed(queueRef.current, p.itemIds[0], correct)
+    },
+    [dealt, onAnswer],
+  )
+
   const pick = useCallback(
     (index: number) => {
       if (!dealt || picked !== null) return
       setPicked(index)
       const correct = index === dealt.correctIndex
-      onAnswer(dealt.problem.itemIds, correct)
-      setRecent((r) => [...r.slice(-19), correct])
+      settle(correct, correct ? undefined : dealt.choices[index].slip)
     },
-    [dealt, picked, onAnswer],
+    [dealt, picked, settle],
   )
 
   const submit = useCallback(() => {
-    if (!problem || settled) return
+    if (!dealt || !problem || settled) return
     const v = checkAnswer(typed, {
       variable: problem.variable,
       target: problem.target,
       poles: problem.poles,
     })
-    setVerdict(v)
+    // A typed wrong answer that lands on a known distractor is the same mistake
+    // as picking it from a list, and gets the same explanation. Every distractor
+    // counts here, not just the ones a multiple-choice list had room for: typed
+    // mode shows no options, so trimming would only narrow the diagnosis.
+    const named = v.ok
+      ? null
+      : diagnose(
+          typed,
+          { primary: problem.variable, allowed: [problem.variable] },
+          problem.choices,
+          problem.poles,
+        )
+    setVerdict(named ? { ok: false, code: 'wrong', message: named.why } : v)
     // Only the first attempt counts, so mastery tracks what you knew, not what
     // you found after three goes.
-    if (tries === 0) {
-      onAnswer(problem.itemIds, v.ok)
-      setRecent((r) => [...r.slice(-19), v.ok])
-    }
+    if (tries === 0) settle(v.ok, named?.slip)
     setTries((n) => n + 1)
-  }, [problem, typed, tries, settled, onAnswer])
+  }, [dealt, problem, typed, tries, settled, settle])
 
 
   useAnswerKeys({

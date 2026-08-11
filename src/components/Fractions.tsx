@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  FRACTION_ITEM_IDS,
   nextFractionProblem,
   type FractionKind,
   type FractionProblem,
 } from '../generators/fraction'
 import { checkScoped, previewOf, type Verdict } from '../lib/check'
 import { FRACTION_LADDER, ladderOf, stepLadder } from '../lib/ladder'
-import { autoOptionCount, TIER_LABEL, shouldType, tierFor } from '../lib/mastery'
-import { statsFor, type ProgressState } from '../store/progress'
+import { autoOptionCount, TIER_LABEL, effectiveTier, shouldType, type Tier } from '../lib/mastery'
+import { uncoveredItems } from '../lib/facets'
+import { diagnose } from '../lib/diagnose'
+import { type AttemptDetail, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
 import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
@@ -33,7 +36,7 @@ interface FractionsProps {
   progress: ProgressState
   prefs: Prefs
   onPrefs: (next: Prefs) => void
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
   onRung: (rung: number, run: number) => void
 }
 
@@ -139,7 +142,7 @@ export function Fractions({ progress, prefs, onPrefs, onAnswer, onRung }: Fracti
 interface Dealt {
   problem: FractionProblem
   mode: 'choose' | 'type'
-  tier: ReturnType<typeof tierFor>
+  tier: Tier
   choices: FractionProblem['choices']
   correctIndex: number
 }
@@ -168,7 +171,7 @@ function FractionDrill({
   response: Response
   progress: ProgressState
   ladder: { rung: number; run: number }
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
   onRung: (rung: number, run: number) => void
 }) {
   const [dealt, setDealt] = useState<Dealt | null>(null)
@@ -187,10 +190,13 @@ function FractionDrill({
 
   const build = useCallback((): Dealt => {
     const state = progressRef.current
+    const uncovered = uncoveredItems(FRACTION_ITEM_IDS, state.facets)
     const problem = nextFractionProblem(
-      guided ? { kind: 'auto', rung: ladderRef.current.rung } : { kind },
+      guided
+        ? { kind: 'auto', rung: ladderRef.current.rung, uncovered }
+        : { kind, uncovered },
     )
-    const tier = tierFor(statsFor(state, problem.itemId))
+    const tier = effectiveTier(state, problem.itemId)
     // A recognition task has no typed form to give.
     const mode = problem.chooseOnly
       ? 'choose'
@@ -225,8 +231,8 @@ function FractionDrill({
   const settled = mode === 'choose' ? picked !== null : verdict?.ok === true || revealed
 
   const settle = useCallback(
-    (itemId: string, correct: boolean) => {
-      onAnswer([itemId], correct)
+    (itemId: string, correct: boolean, detail: AttemptDetail = {}) => {
+      onAnswer([itemId], correct, detail)
       setRecent((r) => [...r.slice(-19), correct])
       if (guided) {
         const next = stepLadder(FRACTION_LADDER, ladderRef.current, correct)
@@ -241,7 +247,11 @@ function FractionDrill({
     (index: number) => {
       if (!dealt || picked !== null) return
       setPicked(index)
-      settle(dealt.problem.itemId, index === dealt.correctIndex)
+      const correct = index === dealt.correctIndex
+      settle(dealt.problem.itemId, correct, {
+        slip: correct ? undefined : dealt.choices[index].slip,
+        facets: dealt.problem.facets,
+      })
     },
     [dealt, picked, settle],
   )
@@ -258,8 +268,11 @@ function FractionDrill({
       return
     }
     const v = checkScoped(typed, { symbols: p.symbols, target: p.target, points: p.points })
-    setVerdict(v)
-    if (tries === 0) settle(p.itemId, v.ok)
+    // Every distractor, not just the ones on display: typed mode shows no
+    // options, so trimming the list would only narrow the diagnosis.
+    const named = v.ok ? null : diagnose(typed, p.symbols, p.choices)
+    setVerdict(named ? { ok: false, code: 'wrong', message: named.why } : v)
+    if (tries === 0) settle(p.itemId, v.ok, { slip: named?.slip, facets: p.facets })
     setTries((n) => n + 1)
   }, [dealt, typed, tries, settled, settle])
 

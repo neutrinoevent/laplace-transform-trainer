@@ -213,3 +213,15 @@ function fact(n: number): number {
   for (let i = 2; i <= n; i++) out *= i
   return out
 }
+
+describe('every distractor is a named mistake', () => {
+  it('carries a slip tag', () => {
+    const untagged: string[] = []
+    for (const p of ALL) {
+      for (const c of p.choices) {
+        if (c.why !== null && !c.slip) untagged.push(`${p.statementTex} :: ${c.tex}`)
+      }
+    }
+    expect(untagged).toEqual([])
+  })
+})

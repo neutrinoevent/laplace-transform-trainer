@@ -52,10 +52,33 @@ export function About() {
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>
+        How it chooses what to ask
+      </h3>
+      <p>
+        <Rich text="Nothing here needs configuring, and nothing consults the calendar: everything is counted in questions answered, so forty in an evening and forty across a term behave the same. Nor is anything read from how long you took — an open tab is not a thinking student." />
+      </p>
+      <ul>
+        <li>
+          <strong>Wrong answers are counted by the mistake, not by the row.</strong>{' '}
+          <Rich text="Dropping the fix-up on sine, on hyperbolic sine and on a delayed inverse is one problem met three times, and the Progress tab says so, with the remedy attached. Type an answer that lands on a known wrong one and you are told exactly what picking it from a list would have told you." />
+        </li>
+        <li>
+          <strong>A skill is not scored on its easy half.</strong>{' '}
+          <Rich text="$\mathcal{L}^{-1}\{3/(s^2+9)\}$ and $\mathcal{L}^{-1}\{5/(s^2+9)\}$ are the same row but not the same problem — only the second makes you build the constant. So a row with a harder variant is held below proficient until that variant has been faced, the drill serves it rather than waiting for the draw to oblige, and the Progress tab says what is owed. Only rows that can owe a fix-up are held: $5/s$ and $5s/(s^2+9)$ are linearity, with nothing to manufacture." />
+        </li>
+        <li>
+          <strong>A run is interleaved.</strong>{' '}
+          <Rich text="Nothing recurs within three questions, so consecutive problems come from different rows; and a missed item returns after two questions, then five, then ten, starting over if the return is missed too." />
+        </li>
+      </ul>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
         Not in this version
       </h3>
       <p>
-        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stops at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a formula for $Y(s)$ rather than carrying it through the decomposition. The second translation theorem is drilled as the book states it, on $f(t-a)\\,\\mathcal{U}(t-a)$; the alternative form $\\mathcal{L}\\{g(t)\\,\\mathcal{U}(t-a)\\} = e^{-as}\\mathcal{L}\\{g(t+a)\\}$ is stated but not generated." />
+        {/* Single backslashes: a JSX attribute string is not escape-processed,
+            so a doubled one reaches KaTeX as its line break. */}
+        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stops at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a formula for $Y(s)$ rather than carrying it through the decomposition. The second translation theorem is drilled as the book states it, on $f(t-a)\,\mathcal{U}(t-a)$; the alternative form $\mathcal{L}\{g(t)\,\mathcal{U}(t-a)\} = e^{-as}\mathcal{L}\{g(t+a)\}$ is stated but not generated." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

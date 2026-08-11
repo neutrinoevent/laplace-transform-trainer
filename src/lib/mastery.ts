@@ -3,6 +3,7 @@ import { DERIV_ITEM } from '../generators/derivative'
 import { FRACTION_ITEM_IDS } from '../generators/fraction'
 import { SHIFT_ITEMS } from '../generators/shift'
 import { itemId, type Direction } from '../generators/types'
+import { hardFacet, isCovered } from './facets'
 import { statsFor, type ProgressState } from '../store/progress'
 
 /** Criterion tiers derived from the per-item moving average. */
@@ -25,6 +26,24 @@ export function tierFor(s: { attempts: number; reps: number; ema: number }): Tie
 }
 
 export const tierOf = (p: ProgressState, id: string): Tier => tierFor(statsFor(p, id))
+
+const ORDER: Tier[] = ['new', 'learning', 'familiar', 'proficient', 'mastered']
+
+/**
+ * The tier a skill has actually earned. An item with a harder variant cannot
+ * count as proficient until that variant has been met, because until then the
+ * score is measuring the easy half — and it is the tier that decides when the
+ * multiple choice is taken away.
+ */
+export function effectiveTier(p: ProgressState, id: string): Tier {
+  const tier = tierFor(statsFor(p, id))
+  if (!hardFacet(id) || isCovered(id, p.facets)) return tier
+  return ORDER[Math.min(ORDER.indexOf(tier), ORDER.indexOf('familiar'))]
+}
+
+/** Why a tier is being held back, when it is. */
+export const heldBack = (p: ProgressState, id: string): boolean =>
+  hardFacet(id) !== null && !isCovered(id, p.facets) && tierFor(statsFor(p, id)) !== 'new'
 
 export function score(p: ProgressState, form: FormId, dir: Direction): number {
   return statsFor(p, itemId(form, dir)).ema

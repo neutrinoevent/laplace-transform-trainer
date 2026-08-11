@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { nextDerivProblem, type DerivMode, type DerivProblem } from '../generators/derivative'
+import { DERIV_ITEM, nextDerivProblem, type DerivMode, type DerivProblem } from '../generators/derivative'
 import { checkScoped, previewOf, type Verdict } from '../lib/check'
-import { autoOptionCount, TIER_LABEL, shouldType, tierFor } from '../lib/mastery'
-import { statsFor, type ProgressState } from '../store/progress'
+import { autoOptionCount, TIER_LABEL, effectiveTier, shouldType, type Tier } from '../lib/mastery'
+import { uncoveredItems } from '../lib/facets'
+import { diagnose } from '../lib/diagnose'
+import { type AttemptDetail, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
 import { AnswerBox, Feedback, Options } from './Answering'
 import { Derivation } from './Derivation'
@@ -28,7 +30,7 @@ interface DerivativesProps {
   progress: ProgressState
   prefs: Prefs
   onPrefs: (next: Prefs) => void
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
 }
 
 export function Derivatives({ progress, prefs, onPrefs, onAnswer }: DerivativesProps) {
@@ -109,7 +111,7 @@ export function Derivatives({ progress, prefs, onPrefs, onAnswer }: DerivativesP
 interface Dealt {
   problem: DerivProblem
   mode: 'choose' | 'type'
-  tier: ReturnType<typeof tierFor>
+  tier: Tier
   choices: DerivProblem['choices']
   correctIndex: number
 }
@@ -136,7 +138,7 @@ function DerivDrill({
   symbolic: boolean
   response: Response
   progress: ProgressState
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
 }) {
   const [dealt, setDealt] = useState<Dealt | null>(null)
   const [picked, setPicked] = useState<number | null>(null)
@@ -151,8 +153,13 @@ function DerivDrill({
   progressRef.current = progress
 
   const build = useCallback((): Dealt => {
-    const problem = nextDerivProblem({ mode, symbolic })
-    const tier = tierFor(statsFor(progressRef.current, problem.itemId))
+    const state = progressRef.current
+    const problem = nextDerivProblem({
+      mode,
+      symbolic,
+      uncovered: uncoveredItems(Object.values(DERIV_ITEM), state.facets),
+    })
+    const tier = effectiveTier(state, problem.itemId)
     const answering = response === 'auto' ? (shouldType(tier) ? 'type' : 'choose') : response
     return { problem, mode: answering, tier, ...trim(problem, autoOptionCount(tier)) }
   }, [mode, symbolic, response])
@@ -184,7 +191,10 @@ function DerivDrill({
       if (!dealt || picked !== null) return
       setPicked(index)
       const correct = index === dealt.correctIndex
-      onAnswer([dealt.problem.itemId], correct)
+      onAnswer([dealt.problem.itemId], correct, {
+        slip: correct ? undefined : dealt.choices[index].slip,
+        facets: dealt.problem.facets,
+      })
       setRecent((r) => [...r.slice(-19), correct])
     },
     [dealt, picked, onAnswer],
@@ -194,9 +204,12 @@ function DerivDrill({
     if (!dealt || settled) return
     const p = dealt.problem
     const v = checkScoped(typed, { symbols: p.symbols, target: p.target, points: p.points })
-    setVerdict(v)
+    // Every distractor, not just the ones on display: typed mode shows no
+    // options, so trimming the list would only narrow the diagnosis.
+    const named = v.ok ? null : diagnose(typed, p.symbols, p.choices)
+    setVerdict(named ? { ok: false, code: 'wrong', message: named.why } : v)
     if (tries === 0) {
-      onAnswer([p.itemId], v.ok)
+      onAnswer([p.itemId], v.ok, { slip: named?.slip, facets: p.facets })
       setRecent((r) => [...r.slice(-19), v.ok])
     }
     setTries((n) => n + 1)

@@ -8,6 +8,8 @@
  */
 
 import { CARD_BY_ID, CARDS } from '../data/cards'
+import type { SlipId } from '../data/slips'
+import { facetKey, type Facet, type FacetStat } from '../lib/facets'
 import { DERIV_ITEM } from '../generators/derivative'
 import { FRACTION_ITEM_IDS } from '../generators/fraction'
 import { SHIFT_ITEMS } from '../generators/shift'
@@ -57,6 +59,14 @@ export interface ProgressState {
   /** Position on the partial-fractions ladder. */
   fracRung: number | null
   fracRun: number
+  /**
+   * How often each named mistake has been made, and how recently — measured in
+   * answers given rather than in days, so it means the same whether the work is
+   * done in one sitting or twenty.
+   */
+  slips: Record<string, { count: number; lastAt: number }>
+  /** Attempts and successes per `item#facet`, keyed by `lib/facets`. */
+  facets: Record<string, FacetStat>
 }
 
 export type Grade = 'again' | 'good' | 'easy'
@@ -104,6 +114,8 @@ export function emptyProgress(): ProgressState {
     shiftRun: 0,
     fracRung: null,
     fracRun: 0,
+    slips: {},
+    facets: {},
   }
 }
 
@@ -121,6 +133,8 @@ export function loadProgress(): ProgressState {
       shiftRun: parsed.shiftRun ?? 0,
       fracRung: parsed.fracRung ?? null,
       fracRun: parsed.fracRun ?? 0,
+      slips: parsed.slips ?? {},
+      facets: parsed.facets ?? {},
     }
   } catch {
     return emptyProgress()
@@ -149,10 +163,18 @@ export function masteryMap(state: ProgressState): Map<string, number> {
  * A miss on an item whose card is scheduled far out also pulls that review in;
  * being wrong today outranks yesterday's schedule.
  */
+export interface AttemptDetail {
+  /** The named mistake, when a wrong answer identified one. */
+  slip?: SlipId
+  /** Which harder variants this question actually exercised. */
+  facets?: Facet[]
+}
+
 export function recordAttempt(
   state: ProgressState,
   ids: string[],
   correct: boolean,
+  detail: AttemptDetail = {},
 ): ProgressState {
   const now = Date.now()
   const byId = { ...state.byId }
@@ -173,10 +195,34 @@ export function recordAttempt(
     byId[id] = stats
   }
   const currentStreak = correct ? state.currentStreak + 1 : 0
+  const totalAttempts = state.totalAttempts + 1
+
+  // A named mistake is counted once however many items the question credited,
+  // because it is one mistake.
+  const slips = { ...state.slips }
+  if (!correct && detail.slip) {
+    const prev = slips[detail.slip] ?? { count: 0, lastAt: 0 }
+    slips[detail.slip] = { count: prev.count + 1, lastAt: totalAttempts }
+  }
+
+  const facets = { ...state.facets }
+  for (const id of ids) {
+    for (const facet of detail.facets ?? []) {
+      const key = facetKey(id, facet)
+      const prev = facets[key] ?? { attempts: 0, correct: 0 }
+      facets[key] = {
+        attempts: prev.attempts + 1,
+        correct: prev.correct + (correct ? 1 : 0),
+      }
+    }
+  }
+
   const next: ProgressState = {
     ...state,
     byId,
-    totalAttempts: state.totalAttempts + 1,
+    slips,
+    facets,
+    totalAttempts,
     totalCorrect: state.totalCorrect + (correct ? 1 : 0),
     currentStreak,
     bestStreak: Math.max(state.bestStreak, currentStreak),

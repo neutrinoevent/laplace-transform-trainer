@@ -14,6 +14,7 @@ import {
   importProgress,
   loadProgress,
   recordAttempt,
+  type AttemptDetail,
   recordBoard,
   recordGrade,
   recordRung,
@@ -92,8 +93,8 @@ export default function App() {
     savePrefs(next)
   }
 
-  const onAnswer = (ids: string[], correct: boolean) =>
-    setProgress((p) => recordAttempt(p, ids, correct))
+  const onAnswer = (ids: string[], correct: boolean, detail?: AttemptDetail) =>
+    setProgress((p) => recordAttempt(p, ids, correct, detail))
   const onGrade = (id: string, grade: Grade) => setProgress((p) => recordGrade(p, id, grade))
   const onBoard = (size: number, ms: number) => setProgress((p) => recordBoard(p, size, ms))
   const onRung = (which: 'shift' | 'frac') => (rung: number, run: number) =>

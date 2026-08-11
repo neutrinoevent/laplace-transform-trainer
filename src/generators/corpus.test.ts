@@ -311,3 +311,26 @@ describe('reference content', () => {
     }
   })
 })
+
+describe('every distractor is a named mistake', () => {
+  it('carries a slip tag across every generator', () => {
+    const untagged: string[] = []
+    for (const p of CORPUS) {
+      for (const c of p.choices) {
+        if (c.why !== null && !c.slip) untagged.push(`${p.statementTex} :: ${c.tex}`)
+      }
+    }
+    expect(untagged).toEqual([])
+  })
+
+  it('keeps distractors evaluable, so a typed answer can be matched to one', () => {
+    for (const p of CORPUS) {
+      for (const c of p.choices) {
+        if (c.why === null) continue
+        expect(typeof c.value, c.tex).toBe('function')
+        const at: Record<string, number> = p.variable === 's' ? { s: 9.3 } : { t: 0.7 }
+        expect(Number.isFinite(c.value!(at)), c.tex).toBe(true)
+      }
+    }
+  })
+})

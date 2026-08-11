@@ -29,6 +29,8 @@ import {
 } from '../lib/poly'
 import type { Symbols } from '../lib/check'
 import { makeRng, randomRng, type RNG } from '../lib/rng'
+import type { SlipId } from '../data/slips'
+import type { Facet } from '../lib/facets'
 import type { Choice, Step } from './types'
 
 export type FractionKind = 'square' | 'form' | 'linear' | 'hard'
@@ -249,6 +251,7 @@ export interface FractionProblem {
   requiredForm?: { pattern: RegExp; message: string }
   /** Recognition tasks have no typed form. */
   chooseOnly: boolean
+  facets: Facet[]
   terms: Term[]
 }
 
@@ -296,18 +299,22 @@ function squareProblem(rng: RNG, optionCount: number): FractionProblem {
     {
       tex: `\\left(${shifted}\\right)^2 + ${given[0]}`,
       why: `The constant that is left over is $c - p^2 = ${given[0]} - ${p ** 2} = ${beta ** 2}$; the whole of $c$ has already been used once.`,
+      slip: 'square',
     },
     {
       tex: `\\left(${p < 0 ? `s - ${-2 * p}` : `s + ${2 * p}`}\\right)^2 + ${beta ** 2}`,
       why: `Inside the bracket goes *half* the middle coefficient: $${given[1]}/2 = ${p}$, not $${given[1]}$.`,
+      slip: 'square',
     },
     {
       tex: `\\left(${shifted}\\right)^2 - ${beta ** 2}`,
       why: 'Subtracting here would make the quadratic factor over the reals — and this one does not, which is exactly why it has to be completed rather than factored.',
+      slip: 'square',
     },
     {
       tex: `\\left(${p < 0 ? `s + ${-p}` : `s - ${p}`}\\right)^2 + ${beta ** 2}`,
       why: `The sign follows the middle term: $s^2 ${given[1] < 0 ? '-' : '+'} ${Math.abs(given[1])}s$ needs $\\left(${shifted}\\right)^2$.`,
+      slip: 'square',
     },
   ]
   const { choices, correctIndex } = assembleChoices(answerTex, wrong, rng, optionCount)
@@ -345,6 +352,7 @@ function squareProblem(rng: RNG, optionCount: number): FractionProblem {
         'That is equal to the quadratic, but not yet completed — write it as $(s \\pm p)^2$ plus a constant.',
     },
     chooseOnly: false,
+    facets: ['square'],
     terms: [],
   }
 }
@@ -387,6 +395,7 @@ function formProblem(rng: RNG, optionCount: number): FractionProblem {
     wrong.push({
       tex: shapeTex(factors.map((f) => (f === repeated ? { ...f, power: 1 } : f))),
       why: `A factor to the power ${repeated.power} needs a term for *every* power up to it — one over the factor, one over its square — not a single term over the highest.`,
+      slip: 'decomposition-shape',
     })
   }
   const quad = factors.find((f): f is QuadFactor => f.kind === 'quad')
@@ -394,6 +403,7 @@ function formProblem(rng: RNG, optionCount: number): FractionProblem {
     wrong.push({
       tex: answerTex.replace(/\\dfrac\{[A-Z]s \+ ([A-Z])\}/, '\\dfrac{$1}'),
       why: 'An irreducible quadratic carries a *linear* numerator, $As + B$. A constant on top is not general enough to fit.',
+      slip: 'decomposition-shape',
     })
     wrong.push({
       tex: shapeTex([
@@ -401,17 +411,20 @@ function formProblem(rng: RNG, optionCount: number): FractionProblem {
         { kind: 'linear', root: quad.alpha, power: 2 },
       ]),
       why: 'That quadratic does not factor over the reals, so it cannot be split into linear pieces at all.',
+      slip: 'decomposition-shape',
     })
   }
   if (factors.length >= 3) {
     wrong.push({
       tex: shapeTex(factors.slice(0, -1)),
       why: 'Every factor of the denominator gets a term. One of them has been left out.',
+      slip: 'decomposition-shape',
     })
   }
   wrong.push({
     tex: `\\dfrac{A}{${factorsTex(factors)}}`,
     why: 'That is the fraction you started with, with the numerator renamed. Decomposing means one term per factor.',
+    slip: 'decomposition-shape',
   })
 
   const { choices, correctIndex } = assembleChoices(answerTex, wrong, rng, optionCount)
@@ -438,6 +451,7 @@ function formProblem(rng: RNG, optionCount: number): FractionProblem {
     ],
     syntaxNote: '',
     chooseOnly: true,
+    facets: ['shape'],
     terms: [],
   }
 }
@@ -464,14 +478,19 @@ function buildInversion(
   // Distractors are the decomposition gone wrong, rendered through the same
   // machinery as the answer so none of them can differ only in typography.
   const pool: Choice[] = []
-  const push = (alt: Piece[], why: string) => {
-    const tex = fTex(alt.flatMap(pieceTerms))
-    if (tex !== answerTex) pool.push({ tex, why })
+  const push = (alt: Piece[], why: string, slip: SlipId) => {
+    const terms = alt.flatMap(pieceTerms)
+    const tex = fTex(terms)
+    if (tex !== answerTex) pool.push({ tex, why, slip, value: (o) => evalF(terms, o.t) })
   }
   const flipped = pieces.map((p) =>
     p.kind === 'linear' ? { ...p, c: -p.c } : { ...p, A: -p.A, B: -p.B },
   )
-  push(flipped, 'Every constant has come out with the wrong sign — check the value substituted when covering up.')
+  push(
+    flipped,
+    'Every constant has come out with the wrong sign — check the value substituted when covering up.',
+    'decomposition-constants',
+  )
   if (pieces.length > 1) {
     const swapped = [...pieces]
     if (swapped[0].kind === 'linear' && swapped[1].kind === 'linear') {
@@ -483,9 +502,14 @@ function buildInversion(
           ...swapped.slice(2),
         ],
         'The two constants have been attached to the wrong factors.',
+        'decomposition-constants',
       )
     }
-    push(pieces.slice(0, -1), 'One piece of the decomposition is missing from the answer.')
+    push(
+      pieces.slice(0, -1),
+      'One piece of the decomposition is missing from the answer.',
+      'decomposition-constants',
+    )
   }
   if (repeated) {
     const first = pieces.find(
@@ -498,6 +522,7 @@ function buildInversion(
       push(
         pieces.map((p) => (p === second ? { ...second, order: 1 } : p)),
         'The squared factor inverts through Theorem 7.3.1: $1/(s-a)^2$ is $te^{at}$, not another plain exponential.',
+        'decomposition-shape',
       )
     }
   }
@@ -505,12 +530,14 @@ function buildInversion(
     push(
       pieces.map((p) => (p.kind === 'quad' ? { ...p, alpha: 0 } : p)),
       'The quadratic was completed to $(s-a)^2 + k^2$, so the answer carries $e^{at}$. Dropping it inverts the untranslated row instead.',
+      'translation-missing',
     )
   }
   if (quad) {
     push(
       pieces.map((p) => (p.kind === 'quad' ? { ...p, A: p.B, B: p.A } : p)),
       'The $s$ in the numerator goes with the cosine and the constant with the sine; these are the other way round.',
+      'row-marker',
     )
   }
 
@@ -536,6 +563,11 @@ function buildInversion(
     derivation: inversionDerivation(factors, pieces, givenTex, num),
     syntaxNote: 'Give a function of `t`, for example `2e^(3t) - t*e^(-t)`.',
     chooseOnly: false,
+    facets: [
+      ...(repeated ? (['repeated'] as const) : []),
+      ...(quad ? (['quadratic'] as const) : []),
+      ...(quad && quad.alpha !== 0 ? (['square'] as const) : []),
+    ],
     terms,
   }
 }
@@ -650,8 +682,10 @@ function linearProblem(rng: RNG, optionCount: number): FractionProblem {
   return buildInversion(rng, factors, pieces, optionCount, 'linear')
 }
 
-function hardProblem(rng: RNG, optionCount: number): FractionProblem {
-  if (rng.bool(0.5)) {
+function hardProblem(rng: RNG, optionCount: number, forceHard = false): FractionProblem {
+  // The repeated linear factor is the gentler half of this rung; when the
+  // quadratic is owed, it is skipped.
+  if (!forceHard && rng.bool(0.5)) {
     // A repeated linear factor, which inverts through the first translation.
     const [r1, r2] = distinctRoots(rng, 2)
     const withPartner = rng.bool(0.6)
@@ -701,6 +735,8 @@ export interface FractionOptions {
   /** 0..3; see `lib/ladder`. */
   rung?: number
   optionCount?: number
+  /** Items whose harder variant is still under-tested, and should be forced. */
+  uncovered?: Set<string>
   seed?: number
 }
 
@@ -729,6 +765,6 @@ export function nextFractionProblem(o: FractionOptions): FractionProblem {
     case 'linear':
       return linearProblem(rng, count)
     case 'hard':
-      return hardProblem(rng, count)
+      return hardProblem(rng, count, o.uncovered?.has(FRACTION_ITEMS.hard) ?? false)
   }
 }

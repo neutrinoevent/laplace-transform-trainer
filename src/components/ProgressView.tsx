@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { FORMS } from '../data/forms'
 import { CARD_BY_ID, RULE_CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { SLIP_BY_ID } from '../data/slips'
+import { FACET_LABEL, hardFacet } from '../lib/facets'
 import { FRACTION_ITEMS } from '../generators/fraction'
 import { shiftItemId } from '../generators/shift'
 import { itemId } from '../generators/types'
-import { TIER_LABEL, overallScore, tierFor } from '../lib/mastery'
+import { TIER_LABEL, heldBack, overallScore, tierFor } from '../lib/mastery'
 import {
   dueCount,
   exportProgress,
@@ -14,13 +16,85 @@ import {
 } from '../store/progress'
 import { Rich, Tex } from './Tex'
 
-function Meter({ value }: { value: number }) {
+/**
+ * What keeps going wrong, counted once wherever it happens.
+ *
+ * The same slip made on three different rows is one problem, not three weak
+ * rows — and this is the only place in the app that can say so.
+ */
+function SlipReport({ progress }: { progress: ProgressState }) {
+  const ranked = Object.entries(progress.slips)
+    .map(([id, s]) => ({ slip: SLIP_BY_ID.get(id as never), ...s }))
+    .filter((r) => r.slip)
+    .sort((a, b) => b.count - a.count || b.lastAt - a.lastAt)
+    .slice(0, 5)
+
+  if (!ranked.length) {
+    return (
+      <div className="card">
+        <h2 className="section-title">Where the marks go</h2>
+        <p className="meta-note" style={{ marginBottom: 0 }}>
+          Nothing to report yet. Wrong answers are recorded by the mistake they represent, so the
+          same slip made across different rows is counted once rather than as several weak rows.
+        </p>
+      </div>
+    )
+  }
+
+  const total = ranked.reduce((n, r) => n + r.count, 0)
+  return (
+    <div className="card">
+      <h2 className="section-title">Where the marks go</h2>
+      <p className="meta-note" style={{ marginBottom: 12 }}>
+        Counted by the mistake rather than by the row it happened on — {total} of them so far.
+      </p>
+      <ul className="slip-list">
+        {ranked.map((r) => (
+          <li key={r.slip!.id} className="slip">
+            <div className="slip-head">
+              <span className="slip-name">{r.slip!.name}</span>
+              <span className="slip-count">
+                {r.count}
+                <span className="meta-note"> ×</span>
+              </span>
+            </div>
+            <p className="slip-what">
+              <Rich text={r.slip!.what} />
+            </p>
+            <p className="slip-fix">
+              <Rich text={r.slip!.fix} />
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/**
+ * Given the item it measures, a meter also says when the number is not the
+ * whole story: a skill with a harder variant it has not met yet is being scored
+ * on its easy half, and is held below proficient until it has.
+ */
+function Meter({
+  value,
+  progress,
+  id,
+}: {
+  value: number
+  progress?: ProgressState
+  id?: string
+}) {
+  const held = progress && id ? heldBack(progress, id) : false
   return (
     <>
       <span className="meter">
         <span className="meter-fill" style={{ width: `${Math.round(value * 100)}%` }} />
       </span>
       <span className="meter-num">{Math.round(value * 100)}%</span>
+      {held ? (
+        <div className="meta-note held">capped until {FACET_LABEL[hardFacet(id!)!]} is met</div>
+      ) : null}
     </>
   )
 }
@@ -65,6 +139,8 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
         </div>
       </div>
 
+      <SlipReport progress={progress} />
+
       <div className="card table-card">
         <h2 className="section-title">Row by row, in both directions</h2>
         <p className="meta-note" style={{ marginBottom: 12 }}>
@@ -102,7 +178,7 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                     <Meter value={fwd.ema} />
                   </td>
                   <td>
-                    <Meter value={inv.ema} />
+                    <Meter value={inv.ema} progress={progress} id={itemId(f.id, 'inverse')} />
                   </td>
                   <td className="num">{fwd.attempts + inv.attempts}</td>
                 </tr>
@@ -162,7 +238,7 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                     </div>
                   </td>
                   <td>
-                    <Meter value={st.ema} />
+                    <Meter value={st.ema} progress={progress} id={id} />
                   </td>
                   <td className="num">{st.attempts}</td>
                 </tr>
@@ -209,10 +285,10 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                     </div>
                   </td>
                   <td>
-                    <Meter value={fwd.ema} />
+                    <Meter value={fwd.ema} progress={progress} id={shiftItemId(theorem, 'forward')} />
                   </td>
                   <td>
-                    <Meter value={inv.ema} />
+                    <Meter value={inv.ema} progress={progress} id={shiftItemId(theorem, 'inverse')} />
                   </td>
                   <td className="num">{fwd.attempts + inv.attempts}</td>
                 </tr>
@@ -259,7 +335,7 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                     </div>
                   </td>
                   <td>
-                    <Meter value={st.ema} />
+                    <Meter value={st.ema} progress={progress} id={row.id} />
                   </td>
                   <td className="num">{st.attempts}</td>
                 </tr>

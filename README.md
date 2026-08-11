@@ -74,7 +74,45 @@ So the whole trainer is organised around that gap.
   `Y(s)` — which pulls the seven basic rows back in through the forcing function.
 - **Review** — spaced repetition (SM-2 style) over the rows stated generically. Missing a row in
   Drill pulls its card forward.
-- **Progress** — mastery per row per direction, with a backup/restore box.
+- **Progress** — mastery per row per direction, what keeps going wrong counted by mistake
+  rather than by row, and a backup/restore box.
+
+## What it measures, and what it asks next
+
+Three things decide what you meet next, none of which asks you to configure anything, and none of
+which consults the calendar. Everything below is counted in *questions answered*, so a run of forty
+in an evening and forty over a term behave identically — and nothing is inferred from how long you
+took, because an open tab is not a thinking student.
+
+**Wrong answers are counted by the mistake, not by the row.** Every distractor in the app already
+carried an explanation of the slip that produces it; those slips are now named, from a fixed
+taxonomy of sixteen — the constant fix-up, the numerator marker separating sine from cosine, the
+sign that separates circular from hyperbolic, the initial-value terms Theorem 7.2.2 owes, and so
+on. Dropping the fix-up on sine, on hyperbolic sine and on a delayed inverse is *one* problem met
+three times, and the Progress tab says so, with the remedy attached. Typed answers get this too: a
+typed answer is sampled against every distractor the problem generated, and one that lands on a
+known wrong answer is told exactly what a student who picked it from a list would have been told.
+That closes a backwards gap, since typed mode is where the stronger students are.
+
+**A skill is not scored on its easy half.** `L⁻¹{3/(s²+9)}` and `L⁻¹{5/(s²+9)}` are the same item
+but not the same problem: only the second makes you build the row's constant. A student who keeps
+drawing the first can sit at ninety-five per cent having never met the part that matters — and it
+is that score which decides when the multiple choice is taken away. So each problem now reports
+which harder variant it exercised, and an item with a harder variant is held below proficient until
+that variant has actually been faced and answered. While it is held, the drill serves that variant
+outright rather than waiting for the draw to oblige, and the Progress tab says what is owed.
+
+Only skills with a genuinely harder variant have one, which is a mathematical question and not a
+matter of taste: rows (b), (d) and (f) supply a constant of their own and can owe a fix-up, while
+`5/s`, `5/(s−3)` and `5s/(s²+9)` are plain linearity with nothing to manufacture. Claiming a harder
+half that cannot be generated would cap those rows forever.
+
+**A run is interleaved.** Weighting by weakness, left to itself, serves the weakest item over and
+over — blocked practice wearing an adaptive costume. Two corrections: nothing recurs within three
+questions, so consecutive problems come from different rows; and a missed item is brought back
+after two questions, then five, then ten, restarting the schedule if the return is missed too. This
+is per-sitting state and is deliberately not persisted: it describes the shape of a session, not
+what you know.
 
 ## Building up to §7.3
 
@@ -151,7 +189,11 @@ src/
   lib/expr.ts          expression-level TeX
   lib/poly.ts          integer polynomials: characteristic polynomials, and multiplying a
                        decomposition back out to the fraction it came from
+  data/slips.ts        the misconception taxonomy: what each named mistake is, and its remedy
   lib/mastery.ts       tiers, and the scaffolding that fades with them
+  lib/facets.ts        which harder variant a problem tested, and which are still owed
+  lib/queue.ts         sequencing within a sitting: the gap, and expanding retrieval
+  lib/diagnose.ts      naming a typed wrong answer by sampling it against the distractors
   lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
   components/          Table, Drill, Match, Shifts, Fractions, Derivatives, Review, Progress, About

@@ -20,8 +20,11 @@ import { itemId, type Choice, type Direction, type Problem } from './types'
 export * from './types'
 
 const FREQUENCIES = [1, 2, 2, 3, 3, 4, 5, 6]
+const HARD_FREQUENCIES = FREQUENCIES.filter((k) => k > 1)
 const RATES = [1, 2, 2, 3, 3, 4, 5, 6]
 const POWERS = [1, 2, 2, 3, 3, 4, 5]
+/** The same pools without the parameter that leaves the row's numerator at 1. */
+const HARD_POWERS = POWERS.filter((n) => n > 1)
 const SMALL = [1, 1, 1, 2, 3, 4, 5]
 const CONSTANTS = [2, 3, 4, 5, 6, 7, 10]
 
@@ -49,23 +52,36 @@ function forwardTerm(rng: RNG, form: FormId, negative: boolean): Term {
  * An s-domain term with an integer numerator — the shape an inverse problem
  * needs. `exact` asks for the numerator the row already wants, so no fix-up is
  * owed; otherwise the numerator is arbitrary and the constant has to be built.
+ *
+ * `hard` insists on a fix-up rather than leaving it to the draw, which takes
+ * more than an arbitrary numerator: the row's own numerator must not be 1
+ * either, so `t^1` and `sin 1t` are off the table, and the numerator drawn must
+ * differ from it or the coefficient comes out 1 with nothing to manufacture.
  */
-function inverseTerm(rng: RNG, form: FormId, negative: boolean, exact: boolean): Term {
+function inverseTerm(
+  rng: RNG,
+  form: FormId,
+  negative: boolean,
+  exact: boolean,
+  hard = false,
+): Term {
   const skeleton: Term = (() => {
     switch (form) {
       case 'one':
         return { form, coef: frac(1) }
       case 'power':
-        return { form, coef: frac(1), n: rng.pick(POWERS) }
+        return { form, coef: frac(1), n: rng.pick(hard ? HARD_POWERS : POWERS) }
       case 'exp':
         return { form, coef: frac(1), a: rng.sign() * rng.pick(RATES) }
       default:
-        return { form, coef: frac(1), k: rng.pick(FREQUENCIES) }
+        return { form, coef: frac(1), k: rng.pick(hard ? HARD_FREQUENCIES : FREQUENCIES) }
     }
   })()
   // The numerator this row supplies on its own: n!, k, or 1.
   const own = termNumer(skeleton).coef.n
-  const numer = exact ? own : rng.pick(form === 'one' ? CONSTANTS : SMALL)
+  const pool = form === 'one' ? CONSTANTS : SMALL
+  const numer =
+    exact && !hard ? own : rng.pick(hard ? pool.filter((v) => v !== own) : pool)
   return { ...skeleton, coef: frac((negative ? -1 : 1) * numer, own) }
 }
 
@@ -112,7 +128,14 @@ function buildChoices(
       )
       if (same) continue
       seen.add(tex)
-      pool.push({ tex, why: m.why })
+      pool.push({
+        tex,
+        why: m.why,
+        slip: m.slip,
+        // Kept evaluable so a typed answer landing here is recognised as the
+        // same mistake, not merely as wrong.
+        value: (o) => (direction === 'forward' ? evalS(alt, o.s) : evalF(alt, o.t)),
+      })
     }
   }
 
@@ -177,6 +200,12 @@ function assemble(
     hint: hintFor(terms, direction),
     derivation: forward ? deriveForward(terms) : deriveInverse(terms, splitFrom),
     fixup: terms.some(needsFixup),
+    facets: [
+      ...(terms.some(needsFixup) ? (['fixup'] as const) : []),
+      ...(terms.length > 1 ? (['combo'] as const) : []),
+      ...(splitFrom ? (['split'] as const) : []),
+      ...(terms.some((t) => t.shift || t.delay) ? (['translated'] as const) : []),
+    ],
     terms,
   }
 }
@@ -214,8 +243,11 @@ function buildInverse(
   partners: FormId[],
   combo: boolean,
   optionCount: number,
+  forceHard = false,
 ): Problem {
-  if (combo) {
+  // The split picks its own rows, so it cannot be asked to force a fix-up on
+  // this one; when a fix-up is owed it waits its turn.
+  if (combo && !forceHard) {
     // Half the combinations are the shared-denominator split, when the rows allow it.
     const rows = new Set([first, ...partners])
     const circular = rows.has('sin') && rows.has('cos')
@@ -224,7 +256,7 @@ function buildInverse(
       return pairedInverse(rng, hyper && (!circular || rng.bool(0.5)), optionCount)
     }
   }
-  const terms: Term[] = [inverseTerm(rng, first, false, rng.bool(0.4))]
+  const terms: Term[] = [inverseTerm(rng, first, false, rng.bool(0.4), forceHard)]
   if (combo && partners.length) {
     terms.push(inverseTerm(rng, rng.pick(partners), rng.bool(0.45), rng.bool(0.4)))
   }
@@ -260,6 +292,12 @@ export interface GenOptions {
   optionCount?: number
   /** Avoid handing back the row that was just answered. */
   excludeForm?: FormId | null
+  /** Item ids served too recently to repeat, unless nothing else is left. */
+  avoid?: string[]
+  /** Item ids owed a return after an earlier miss; taken before anything else. */
+  prefer?: string[]
+  /** Items whose harder variant is still under-tested, and should be forced. */
+  uncovered?: Set<string>
   seed?: number
 }
 
@@ -269,7 +307,19 @@ export function nextProblem(o: GenOptions): Problem {
   const directions: Direction[] = o.direction === 'both' ? ['forward', 'inverse'] : [o.direction]
 
   const all = scope.flatMap((form) => directions.map((dir) => ({ form, dir })))
-  const filtered = o.excludeForm ? all.filter((c) => c.form !== o.excludeForm) : all
+
+  // An item owed a return after an earlier miss jumps the queue: coming back at
+  // a widening gap is the point of having missed it.
+  const owed = (o.prefer ?? []).filter((id) => all.some((c) => itemId(c.form, c.dir) === id))
+  if (owed.length) {
+    const back = all.find((c) => itemId(c.form, c.dir) === owed[0])!
+    return dealFor(rng, back.form, back.dir, scope, o)
+  }
+
+  const avoid = new Set(o.avoid ?? [])
+  const filtered = all.filter(
+    (c) => c.form !== o.excludeForm && !avoid.has(itemId(c.form, c.dir)),
+  )
   const pool = filtered.length ? filtered : all
 
   // Weakest first, but never deterministically — a fixed order stops being practice.
@@ -292,18 +342,35 @@ export function nextProblem(o: GenOptions): Problem {
   // useful items here, not a reward.
   const combo =
     o.allowCombo && scope.length > 1 && rng.next() < Math.min(0.45, 0.12 + scopeMastery * 0.45)
-  const partners = scope.filter((f) => f !== chosen.form)
+  return dealFor(rng, chosen.form, chosen.dir, scope, o, combo)
+}
+
+/** Build the question, once the row and direction are settled. */
+function dealFor(
+  rng: RNG,
+  form: FormId,
+  dir: Direction,
+  scope: FormId[],
+  o: GenOptions,
+  combo = false,
+): Problem {
+  const partners = scope.filter((f) => f !== form)
   const count = o.optionCount ?? 4
 
+  // If the harder variant of this item has never been faced, face it now —
+  // otherwise mastery is measured on the easy half alone.
+  const forceHard = o.uncovered?.has(itemId(form, dir)) ?? false
+
   // A translated row is a single-row problem: the point is the translation, and
-  // a second unrelated term would only bury it.
-  if (o.allowShifts && !combo && rng.bool(0.45)) {
-    return buildTranslated(rng, chosen.form, chosen.dir, count)
+  // a second unrelated term would only bury it. It also poses a different skill
+  // from the one owed a fix-up, so it stands aside for that.
+  if (o.allowShifts && !combo && !forceHard && rng.bool(0.45)) {
+    return buildTranslated(rng, form, dir, count)
   }
 
-  return chosen.dir === 'forward'
-    ? buildForward(rng, chosen.form, partners, combo, count)
-    : buildInverse(rng, chosen.form, partners, combo, count)
+  return dir === 'forward'
+    ? buildForward(rng, form, partners, combo, count)
+    : buildInverse(rng, form, partners, combo, count, forceHard)
 }
 
 /** One row of the table, translated, posed through the ordinary drill. */

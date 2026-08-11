@@ -1007,6 +1007,63 @@ code {
   overflow-x: auto;
 }
 
+/* ---- what keeps going wrong ---- */
+
+.slip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.slip {
+  padding: 12px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.slip:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.slip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.slip-name {
+  font-weight: 650;
+  font-size: 14.5px;
+}
+
+.slip-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--bad);
+}
+
+.slip-what {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* The remedy is the reason for naming the slip at all. */
+.slip-fix {
+  margin: 6px 0 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+/* Not an error — the score is real, it is just not the whole skill yet. */
+.held {
+  margin-top: 3px;
+  color: var(--accent);
+}
+
 /* ---- partial fractions ---- */
 
 .piece-table td {

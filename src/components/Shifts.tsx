@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   nextShiftProblem,
+  SHIFT_ITEMS,
   type ShiftDirection,
   type ShiftProblem,
   type Theorem,
 } from '../generators/shift'
 import { checkScoped, previewOf, type Verdict } from '../lib/check'
 import { SHIFT_LADDER, ladderOf, stepLadder } from '../lib/ladder'
-import { autoOptionCount, TIER_LABEL, shouldType, tierFor } from '../lib/mastery'
-import { masteryMap, statsFor, type ProgressState } from '../store/progress'
+import { autoOptionCount, TIER_LABEL, effectiveTier, shouldType, type Tier } from '../lib/mastery'
+import { uncoveredItems } from '../lib/facets'
+import { diagnose } from '../lib/diagnose'
+import { masteryMap, type AttemptDetail, type ProgressState } from '../store/progress'
 import type { Prefs, Response } from '../store/prefs'
 import { AnswerBox, Feedback, Options } from './Answering'
 import { LadderStrip } from './LadderStrip'
@@ -40,7 +43,7 @@ interface ShiftsProps {
   progress: ProgressState
   prefs: Prefs
   onPrefs: (next: Prefs) => void
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
   onRung: (rung: number, run: number) => void
 }
 
@@ -158,7 +161,7 @@ export function Shifts({ progress, prefs, onPrefs, onAnswer, onRung }: ShiftsPro
 interface Dealt {
   problem: ShiftProblem
   mode: 'choose' | 'type'
-  tier: ReturnType<typeof tierFor>
+  tier: Tier
   choices: ShiftProblem['choices']
   correctIndex: number
 }
@@ -189,7 +192,7 @@ function ShiftDrill({
   response: Response
   progress: ProgressState
   ladder: { rung: number; run: number }
-  onAnswer: (ids: string[], correct: boolean) => void
+  onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
   onRung: (rung: number, run: number) => void
 }) {
   const [dealt, setDealt] = useState<Dealt | null>(null)
@@ -211,6 +214,7 @@ function ShiftDrill({
   const build = useCallback((): Dealt => {
     const state = progressRef.current
     const rung = ladderRef.current.rung
+    const uncovered = uncoveredItems(SHIFT_ITEMS, state.facets)
     const problem = nextShiftProblem(
       guided
         ? {
@@ -221,18 +225,19 @@ function ShiftDrill({
             direction: 'auto',
             rung,
             mastery: masteryMap(state),
+            uncovered,
           }
-        : { theorem, direction },
+        : { theorem, direction, uncovered },
     )
-    const tier = tierFor(statsFor(state, problem.itemId))
+    const tier = effectiveTier(state, problem.itemId)
     const mode = response === 'auto' ? (shouldType(tier) ? 'type' : 'choose') : response
     return { problem, mode, tier, ...trim(problem, autoOptionCount(tier)) }
   }, [guided, theorem, direction, response])
 
   /** One place for "an answer happened", so the ladder never misses one. */
   const settle = useCallback(
-    (itemId: string, correct: boolean) => {
-      onAnswer([itemId], correct)
+    (itemId: string, correct: boolean, detail: AttemptDetail = {}) => {
+      onAnswer([itemId], correct, detail)
       setRecent((r) => [...r.slice(-19), correct])
       if (guided) {
         const next = stepLadder(SHIFT_LADDER, ladderRef.current, correct)
@@ -269,7 +274,11 @@ function ShiftDrill({
     (index: number) => {
       if (!dealt || picked !== null) return
       setPicked(index)
-      settle(dealt.problem.itemId, index === dealt.correctIndex)
+      const correct = index === dealt.correctIndex
+      settle(dealt.problem.itemId, correct, {
+        slip: correct ? undefined : dealt.choices[index].slip,
+        facets: dealt.problem.facets,
+      })
     },
     [dealt, picked, settle],
   )
@@ -278,8 +287,11 @@ function ShiftDrill({
     if (!dealt || settled) return
     const p = dealt.problem
     const v = checkScoped(typed, { symbols: p.symbols, target: p.target, points: p.points })
-    setVerdict(v)
-    if (tries === 0) settle(p.itemId, v.ok)
+    // Every distractor, not just the ones on display: typed mode shows no
+    // options, so trimming the list would only narrow the diagnosis.
+    const named = v.ok ? null : diagnose(typed, p.symbols, p.choices)
+    setVerdict(named ? { ok: false, code: 'wrong', message: named.why } : v)
+    if (tries === 0) settle(p.itemId, v.ok, { slip: named?.slip, facets: p.facets })
     setTries((n) => n + 1)
   }, [dealt, typed, tries, settled, settle])
 

@@ -24,6 +24,8 @@ import { polyEval, polyRealRoots, polyTex, type Poly } from '../lib/poly'
 import { scopePoints, type Symbols } from '../lib/check'
 import { makeRng, randomRng, type RNG } from '../lib/rng'
 import { identify } from './derive'
+import type { SlipId } from '../data/slips'
+import type { Facet } from '../lib/facets'
 import type { Choice, Step } from './types'
 
 export type DerivMode = 'transform' | 'solve'
@@ -55,6 +57,7 @@ export interface DerivProblem {
   hint: string
   derivation: Step[]
   syntaxNote: string
+  facets: Facet[]
 }
 
 const DISPLAY: Record<string, string> = {
@@ -129,34 +132,40 @@ function expansionTarget(
 }
 
 /** Named ways of getting the expansion wrong, each one a real mistake. */
-function expansionMutations(n: number): { e: Expansion; why: string }[] {
+function expansionMutations(n: number): { e: Expansion; why: string; slip: SlipId }[] {
   const correct = correctExpansion(n)
-  const out: { e: Expansion; why: string }[] = []
+  const out: { e: Expansion; why: string; slip: SlipId }[] = []
 
   out.push({
     e: { leadPower: n, terms: correct.terms.map((t) => ({ ...t, power: t.k })) },
     why: `The pairing is inverted. The highest power of $s$ goes with $y(0)$ and the bare term is $${initialTex(n - 1)}$ — the power of $s$ and the order of the derivative always sum to $n-1 = ${n - 1}$.`,
+    slip: 'derivative-pairing',
   })
   out.push({
     e: { leadPower: n, terms: correct.terms.map((t) => ({ ...t, sign: 1 as const })) },
     why: 'Every initial-value term is subtracted. They come from a boundary term that arrives with a minus sign.',
+    slip: 'derivative-terms',
   })
   out.push({
     e: { leadPower: n, terms: correct.terms.map((t) => ({ ...t, power: t.power + 1 })) },
     why: `The subtracted terms start one power below the $s^{${n}}$ on $Y(s)$, so the first is $s^{${n - 1}}y(0)$.`,
+    slip: 'derivative-pairing',
   })
   out.push({
     e: { leadPower: n - 1, terms: correct.terms },
     why: `$Y(s)$ carries $s^{n} = s^{${n}}$, one power of $s$ for each derivative taken.`,
+    slip: 'derivative-pairing',
   })
   if (n >= 2) {
     out.push({
       e: { leadPower: n, terms: correct.terms.slice(0, -1) },
       why: `There is one subtracted term for each of $y(0)$ through $${initialTex(n - 1)}$ — that is $n = ${n}$ of them, and one is missing.`,
+      slip: 'derivative-terms',
     })
     out.push({
       e: { leadPower: n, terms: [{ power: n - 1, k: 0, sign: -1 }] },
       why: `Each derivative gives up an initial value, not just the first: $n = ${n}$ terms, not one.`,
+      slip: 'derivative-terms',
     })
   }
   return out
@@ -167,10 +176,17 @@ function expansionMutations(n: number): { e: Expansion; why: string }[] {
 // ---------------------------------------------------------------------------
 
 const ORDERS = [1, 2, 2, 2, 3, 3, 4]
+/** Orders where the pattern is long enough to have to be understood, not recalled. */
+const HIGH_ORDERS = ORDERS.filter((n) => n >= 3)
 const IC_VALUES = [0, 1, 1, 2, 2, 3, 4, 5, -1, -2, -3, -4]
 
-function transformProblem(rng: RNG, symbolic: boolean, optionCount: number): DerivProblem {
-  const n = rng.pick(ORDERS)
+function transformProblem(
+  rng: RNG,
+  symbolic: boolean,
+  optionCount: number,
+  forceHard = false,
+): DerivProblem {
+  const n = rng.pick(forceHard ? HIGH_ORDERS : ORDERS)
   const correct = correctExpansion(n)
 
   // A numeric problem where every initial value is zero has nothing to teach.
@@ -199,7 +215,7 @@ function transformProblem(rng: RNG, symbolic: boolean, optionCount: number): Der
     const same = points.every((p, i) => Math.abs(f(p) - correctValues[i]) < 1e-9)
     if (same) continue
     seen.add(tex)
-    pool.push({ tex, why: m.why })
+    pool.push({ tex, why: m.why, slip: m.slip, value: f })
   }
   const kept = rng.shuffle(pool).slice(0, Math.max(1, optionCount - 1))
   const choices = rng.shuffle([{ tex: answerTex, why: null }, ...kept])
@@ -227,6 +243,7 @@ function transformProblem(rng: RNG, symbolic: boolean, optionCount: number): Der
     correctIndex: choices.findIndex((c) => c.why === null),
     hint: `Theorem 7.2.2 with $n = ${n}$: $s^{${n}}Y(s)$, then ${n} subtracted term${n === 1 ? '' : 's'}, one for each of $y(0)$ through $${initialTex(n - 1)}$.`,
     derivation: transformDerivation(n, values),
+    facets: [...(symbolic ? (['symbolic'] as const) : []), ...(n >= 3 ? (['high-order'] as const) : [])],
     syntaxNote: symbolic
       ? 'Write the transform as `Y` or `Y(s)`, and the initial values as `y(0)`, `y\'(0)`, … (or `y0`, `y1`, …).'
       : 'Write the transform as `Y` or `Y(s)`.',
@@ -275,7 +292,7 @@ function forcingOverTex(term: Term, den: Poly): string {
   return `\\dfrac{${numer}}{${group(termDenomTex(term))}${group(polyTex(den))}}`
 }
 
-function solveProblem(rng: RNG, optionCount: number): DerivProblem {
+function solveProblem(rng: RNG, optionCount: number, forceHard = false): DerivProblem {
   const order = rng.bool(0.72) ? 2 : 1
   const b = order === 2 ? rng.pick([-5, -4, -3, -3, -2, -2, -1, 0, 1, 2, 3, 4, 5]) : 0
   const c =
@@ -285,10 +302,10 @@ function solveProblem(rng: RNG, optionCount: number): DerivProblem {
 
   const y0 = rng.pick([0, 1, 1, 2, 2, 3, 4, -1, -2, -3])
   const y1 = order === 2 ? rng.pick([0, 1, 1, 2, 3, 4, -1, -2, -3, -5]) : 0
-  const forced = rng.bool(0.55)
+  const forced = forceHard || rng.bool(0.55)
   const g = forced ? rng.pick(FORCINGS).make(rng) : null
   // Zero initial data with no forcing gives Y(s) = 0, which teaches nothing.
-  if (!forced && y0 === 0 && y1 === 0) return solveProblem(rng, optionCount)
+  if (!forced && y0 === 0 && y1 === 0) return solveProblem(rng, optionCount, forceHard)
 
   const den: Poly = order === 2 ? [c, b, 1] : [c, 1]
   const num: Poly = order === 2 ? [y1 + b * y0, y0] : [y0]
@@ -339,6 +356,7 @@ function solveProblem(rng: RNG, optionCount: number): DerivProblem {
         ? 'Transform each term. $\\mathcal{L}\\{y^{\\prime\\prime}\\}$ and $\\mathcal{L}\\{y^{\\prime}\\}$ each bring initial values; collect every $Y(s)$ on one side and divide.'
         : 'Transform each term. $\\mathcal{L}\\{y^{\\prime}\\} = sY(s) - y(0)$; collect $Y(s)$ and divide.',
     derivation: solveDerivation({ num, den, g, order, b, c, y0, y1, equationTex, answerTex }),
+    facets: g ? (['forced'] as const).slice() : [],
     syntaxNote: 'Give the right-hand side only, as a function of `s`.',
   }
 }
@@ -385,40 +403,46 @@ function solveChoices(
     return '0'
   }
 
-  const candidates: { tex: string; why: string }[] = []
+  const candidates: { tex: string; why: string; slip: SlipId }[] = []
 
   if (order === 2 && b !== 0) {
     candidates.push({
       tex: build([y1, y0], den),
       why: `$\\mathcal{L}\\{y^{\\prime}\\} = sY(s) - y(0)$ carries an initial value too, so the $${b}\\,y(0)$ from that term belongs in the numerator.`,
+      slip: 'derivative-terms',
     })
   }
   if (order === 2 && y0 !== y1) {
     candidates.push({
       tex: build([y0 + b * y1, y1], den),
       why: '$y(0)$ is the one that multiplies $s$; $y^{\\prime}(0)$ stands alone. These are the other way round.',
+      slip: 'derivative-pairing',
     })
   }
   candidates.push({
     tex: build(num.map((x) => -x), den),
     why: 'The initial-value terms are subtracted on the left of the transformed equation, so they arrive on the right as additions.',
+    slip: 'derivative-terms',
   })
   if (g) {
     candidates.push({
       tex: build(num, den, -1),
       why: '$G(s)$ is already on the right-hand side of the equation. It adds to the initial-value terms, it does not subtract from them.',
+      slip: 'linearity',
     })
   }
   if (order === 2 && b !== 0) {
     candidates.push({
       tex: build(num, [den[0], -den[1], 1]),
       why: 'The denominator is the characteristic polynomial of the equation, carrying the equation’s own signs.',
+      slip: 'linearity',
     })
   }
   if (order === 1) {
     candidates.push({
       tex: build([y0], [den[0], 1].map((x, i) => (i === 0 ? -x : x))),
       why: 'The denominator takes the sign the equation gives it: $y^{\\prime} + cy$ transforms to $(s + c)Y(s)$.',
+      slip: 'linearity',
     })
   }
 
@@ -514,13 +538,17 @@ export interface DerivOptions {
   /** Transform problems: symbolic initial values, or numbers. */
   symbolic?: boolean
   optionCount?: number
+  /** Items whose harder variant is still under-tested, and should be forced. */
+  uncovered?: Set<string>
   seed?: number
 }
 
 export function nextDerivProblem(o: DerivOptions): DerivProblem {
   const rng = o.seed === undefined ? randomRng() : makeRng(o.seed)
   const count = o.optionCount ?? 4
+  // If the harder variant of this item has never been faced, face it now.
+  const forceHard = o.uncovered?.has(DERIV_ITEM[o.mode]) ?? false
   return o.mode === 'solve'
-    ? solveProblem(rng, count)
-    : transformProblem(rng, o.symbolic ?? false, count)
+    ? solveProblem(rng, count, forceHard)
+    : transformProblem(rng, o.symbolic ?? false, count, forceHard)
 }

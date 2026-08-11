@@ -29,6 +29,8 @@ import { fTex, invLap, lapTight, sTex } from '../lib/expr'
 import { polyTex, type Poly } from '../lib/poly'
 import { type Symbols } from '../lib/check'
 import { makeRng, randomRng, type RNG } from '../lib/rng'
+import type { SlipId } from '../data/slips'
+import type { Facet } from '../lib/facets'
 import type { Choice, Step } from './types'
 
 export type Theorem = 'first' | 'second'
@@ -72,6 +74,7 @@ export interface ShiftProblem {
   hint: string
   derivation: Step[]
   syntaxNote: string
+  facets: Facet[]
   terms: Term[]
 }
 
@@ -79,21 +82,33 @@ export interface ShiftProblem {
 const SHIFTABLE: FormId[] = ['power', 'sin', 'cos', 'sinh', 'cosh']
 const DELAYABLE: FormId[] = ['one', 'power', 'exp', 'sin', 'cos', 'sinh', 'cosh']
 
+/**
+ * Completing the square only arises when the translated row is circular, since
+ * that is the shape an irreducible quadratic hides.
+ */
+const SQUARABLE: FormId[] = ['sin', 'cos']
+
+/**
+ * Rows that can owe a fix-up under a delay: the ones whose own numerator is not
+ * already 1. `L^-1{5e^{-2s}/s}` asks nothing of the student beyond the delay.
+ */
+const FIXABLE: FormId[] = ['power', 'sin', 'sinh']
+
 const SHIFTS = [1, 2, 2, 3, 3, 4, 5, -1, -2, -2, -3, -3, -4]
 const GENTLE_SHIFTS = [1, 2, 2, 3, -1, -2, -2, -3]
 const DELAYS = [1, 1, 2, 2, 3, 4]
 const SMALL = [1, 1, 1, 2, 3, 4, 5]
 
-function baseTerm(rng: RNG, form: FormId, coef = frac(1)): Term {
+function baseTerm(rng: RNG, form: FormId, coef = frac(1), hard = false): Term {
   switch (form) {
     case 'one':
       return { form, coef }
     case 'power':
-      return { form, coef, n: rng.pick([1, 2, 2, 3, 3, 4]) }
+      return { form, coef, n: rng.pick(hard ? [2, 2, 3, 3, 4] : [1, 2, 2, 3, 3, 4]) }
     case 'exp':
       return { form, coef, a: rng.sign() * rng.pick([1, 2, 3, 4]) }
     default:
-      return { form, coef, k: rng.pick([1, 2, 2, 3, 3, 4, 5]) }
+      return { form, coef, k: rng.pick(hard ? [2, 2, 3, 3, 4, 5] : [1, 2, 2, 3, 3, 4, 5]) }
   }
 }
 
@@ -136,6 +151,8 @@ function tPoints(delay?: number): Record<string, number>[] {
 interface Candidate {
   tex: string
   why: string
+  slip: SlipId
+  value?: (scope: Record<string, number>) => number
 }
 
 function assembleChoices(
@@ -149,7 +166,7 @@ function assembleChoices(
   for (const c of pool) {
     if (seen.has(c.tex)) continue
     seen.add(c.tex)
-    kept.push(c)
+    kept.push({ tex: c.tex, why: c.why, slip: c.slip, value: c.value })
   }
   const trimmed = rng.shuffle(kept).slice(0, Math.max(1, optionCount - 1))
   const choices = rng.shuffle([{ tex: correctTex, why: null }, ...trimmed])
@@ -159,6 +176,10 @@ function assembleChoices(
 /** Wrong answers for a translated row, in whichever domain the answer lives. */
 function translationCandidates(term: Term, direction: ShiftDirection): Candidate[] {
   const render = direction === 'forward' ? (t: Term) => sTex([t]) : (t: Term) => fTex([t])
+  const valueOf = (t: Term) =>
+    direction === 'forward'
+      ? (o: Record<string, number>) => evalS([t], o.s)
+      : (o: Record<string, number>) => evalF([t], o.t)
   const out: Candidate[] = []
   const plain: Term = { ...term, shift: undefined, delay: undefined }
 
@@ -166,15 +187,20 @@ function translationCandidates(term: Term, direction: ShiftDirection): Candidate
     const a = term.shift
     out.push({
       tex: render({ ...plain, shift: -a }),
+      value: valueOf({ ...plain, shift: -a }),
       why: `The theorem reads $F(s-a)$, and here $a = ${a}$, so every $s$ becomes $${a > 0 ? `s - ${a}` : `s + ${-a}`}$.`,
+      slip: 'translation-sign',
     })
     out.push({
       tex: render(plain),
+      value: valueOf(plain),
       why: 'The exponential factor has been dropped. It is what translates the transform; without it this is the untranslated row.',
+      slip: 'translation-missing',
     })
     out.push({
       tex: render({ ...plain, delay: Math.abs(a) }),
       why: 'That is the *other* translation theorem. An exponential in $t$ moves the transform along the $s$-axis; only an exponential in $s$ delays the function.',
+      slip: 'translation-choice',
     })
     // The s upstairs is translated too, and forgetting it is the classic slip.
     if (term.form === 'cos' || term.form === 'cosh') {
@@ -183,6 +209,7 @@ function translationCandidates(term: Term, direction: ShiftDirection): Candidate
       out.push({
         tex: `\\dfrac{${isOne(mag) ? 's' : `${mag.n}s`}}{${termDenomTex(term)}}`,
         why: 'The numerator was an $s$, so it becomes $s-a$ as well. Every $s$ in the transform moves, not only the ones downstairs.',
+        slip: 'translation-missing',
       })
     }
   }
@@ -191,25 +218,31 @@ function translationCandidates(term: Term, direction: ShiftDirection): Candidate
     const d = term.delay
     out.push({
       tex: render({ ...plain, delay: undefined }),
+      value: valueOf({ ...plain, delay: undefined }),
       why:
         direction === 'forward'
           ? 'The delay has been ignored. Switching a function on at $t = a$ costs a factor of $e^{-as}$.'
           : 'The $e^{-as}$ has been dropped. It says the answer is delayed and off before $t = a$.',
+      slip: 'translation-missing',
     })
     out.push({
       tex: render({ ...plain, shift: -d }),
+      value: valueOf({ ...plain, shift: -d }),
       why: 'That is the *other* translation theorem. A delay in $t$ multiplies the transform by $e^{-as}$; it does not translate it along the $s$-axis.',
+      slip: 'translation-choice',
     })
     if (direction === 'inverse') {
       // The step without the shifted argument: on at the right time, wrong shape.
       out.push({
         tex: `${fTex([plain])}\\,${stepTex(d)}`,
         why: `The row has to be delayed as well as switched on: the answer is $f(t-${d})\\,\\mathcal{U}(t-${d})$, not $f(t)\\,\\mathcal{U}(t-${d})$.`,
+        slip: 'translation-missing',
       })
     } else {
       out.push({
         tex: sTex([{ ...plain, delay: -d }]),
         why: `The sign in the exponent follows the delay: switching on at $t = ${d}$ gives $e^{-${d}s}$.`,
+        slip: 'translation-sign',
       })
     }
   }
@@ -239,8 +272,10 @@ function firstProblem(
   direction: ShiftDirection,
   optionCount: number,
   rung: number,
+  forceHard = false,
 ): ShiftProblem {
-  const form = rng.pick(SHIFTABLE)
+  const square = forceHard && direction === 'inverse'
+  const form = rng.pick(square ? SQUARABLE : SHIFTABLE)
   // Small translations first; the arithmetic should not be the obstacle.
   const shift = rng.pick(rung === 0 ? GENTLE_SHIFTS : SHIFTS)
   const coef = frac(direction === 'forward' && rung > 0 ? rng.pick(SMALL) : 1)
@@ -250,9 +285,11 @@ function firstProblem(
 
   // Half the inverse problems hide the translation inside a quadratic, which is
   // the case that needs completing the square before the row is even visible —
-  // and which only appears at the top rung.
+  // and which only appears at the top rung, unless it is owed outright.
   const completeSquare =
-    rung >= 3 && direction === 'inverse' && (form === 'sin' || form === 'cos') && rng.bool(0.5)
+    direction === 'inverse' &&
+    SQUARABLE.includes(form) &&
+    (square || (rung >= 3 && rng.bool(0.5)))
 
   const givenTex = completeSquare
     ? `\\dfrac{${polyTex(expandedNumerator(term))}}{${polyTex(expandedDenominator(term))}}`
@@ -268,6 +305,7 @@ function firstProblem(
     pool.push({
       tex: fTex([{ ...plain, coef: term.coef }]),
       why: 'Completing the square is what reveals the translation; stopping before it loses the $e^{at}$ entirely.',
+      slip: 'square',
     })
   }
 
@@ -298,6 +336,10 @@ function firstProblem(
     syntaxNote: forward
       ? 'Give a function of `s`. Any equivalent form is accepted.'
       : 'Give a function of `t`, for example `e^(-2t)cos 4t`.',
+    facets: [
+      'translated',
+      ...(completeSquare ? (['square'] as const) : []),
+    ],
     terms: [term],
   }
 }
@@ -360,10 +402,14 @@ function secondProblem(
   direction: ShiftDirection,
   optionCount: number,
   rung: number,
+  forceHard = false,
 ): ShiftProblem {
-  const form = rng.pick(DELAYABLE)
+  // A fix-up under a delay needs a row that supplies a constant of its own, and
+  // a numerator that is not already that constant.
+  const fixup = forceHard && direction === 'inverse'
+  const form = rng.pick(fixup ? FIXABLE : DELAYABLE)
   const delay = rng.pick(DELAYS)
-  const skeleton = baseTerm(rng, form)
+  const skeleton = baseTerm(rng, form, frac(1), fixup)
   const own = termNumer(skeleton).coef.n
 
   // Forward problems fix an integer coefficient in t; inverse problems fix an
@@ -373,7 +419,9 @@ function secondProblem(
   const coef =
     direction === 'forward'
       ? frac(rung > 0 ? rng.pick(SMALL) : 1)
-      : frac(rung >= 2 && rng.bool(0.55) ? rng.pick(SMALL) : own, own)
+      : fixup
+        ? frac(rng.pick(SMALL.filter((v) => v !== own)), own)
+        : frac(rung >= 2 && rng.bool(0.55) ? rng.pick(SMALL) : own, own)
   const term: Term = { ...skeleton, coef, delay }
   const poles = polesOf([term])
 
@@ -408,6 +456,10 @@ function secondProblem(
     syntaxNote: forward
       ? 'Give a function of `s`; write the exponential as `e^(-2s)`.'
       : 'Give a function of `t`. Write the unit step as `U(t-2)` — `u`, `H` or `step` are accepted too.',
+    facets: [
+      'translated',
+      ...(!isOne(term.coef) ? (['fixup'] as const) : []),
+    ],
     terms: [term],
   }
 }
@@ -471,6 +523,8 @@ export interface ShiftOptions {
   /** Mastery per shift item, so the weaker skill comes up more often. */
   mastery?: Map<string, number>
   optionCount?: number
+  /** Items whose harder variant is still under-tested, and should be forced. */
+  uncovered?: Set<string>
   seed?: number
 }
 
@@ -531,9 +585,11 @@ export function nextShiftProblem(o: ShiftOptions): ShiftProblem {
         : o.direction
 
   const count = o.optionCount ?? 4
+  // If the harder variant of this item has never been faced, face it now.
+  const forceHard = o.uncovered?.has(shiftItemId(theorem, direction)) ?? false
   return theorem === 'first'
-    ? firstProblem(rng, direction, count, rung)
-    : secondProblem(rng, direction, count, rung)
+    ? firstProblem(rng, direction, count, rung, forceHard)
+    : secondProblem(rng, direction, count, rung, forceHard)
 }
 
 /**
