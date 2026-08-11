@@ -45,6 +45,13 @@ export function About() {
       </ul>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>
+        Settings
+      </h3>
+      <p>
+        <Rich text="The gear beside the theme toggle holds one setting: *hide which row it is*, on by default. A label reading “(d) Sine” over $\mathcal{L}^{-1}\{5/(s^2+4)\}$ answers half the question before it is asked — recognising the form is the skill, and nothing hands it over on an exam. It hides the row in Drill, which theorem applies in Shifts, and which method in Fractions; the derivative badge stays, since $\mathcal{L}\{y^{\prime\prime\prime}\}$ names its own order. Turn it off when you are learning one particular row rather than testing recall." />
+      </p>
+
+      <h3 className="section-title" style={{ marginTop: 6 }}>
         The fix-up
       </h3>
       <p>

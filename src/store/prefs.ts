@@ -22,6 +22,15 @@ export interface Prefs {
   shiftDirection: 'both' | 'forward' | 'inverse'
   /** Mix translated forms into the ordinary seven-row drill. */
   shiftsInDrill: boolean
+  /**
+   * Hide the label naming the row, theorem or method a problem comes from.
+   *
+   * On by default. A badge reading "(d) Sine" answers half the question before
+   * it is asked — recognising which row you are looking at is the skill, and no
+   * exam hands it over. Turning it off puts the label back for anyone using the
+   * drill to learn a specific row rather than to test recall.
+   */
+  hideRowLabel: boolean
   /** Which face of partial fractions was last open. */
   fracView: 'rule' | 'drill'
   fracGuided: boolean
@@ -41,6 +50,7 @@ export const defaultPrefs = (): Prefs => ({
   shiftTheorem: 'both',
   shiftDirection: 'both',
   shiftsInDrill: false,
+  hideRowLabel: true,
   fracView: 'rule',
   fracGuided: true,
   fracKind: 'linear',

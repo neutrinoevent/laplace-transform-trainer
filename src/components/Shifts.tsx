@@ -148,6 +148,7 @@ export function Shifts({ progress, prefs, onPrefs, onAnswer, onRung }: ShiftsPro
           theorem={prefs.shiftTheorem}
           direction={prefs.shiftDirection}
           response={prefs.response}
+          hideLabel={prefs.hideRowLabel}
           progress={progress}
           ladder={ladder}
           onAnswer={onAnswer}
@@ -181,6 +182,7 @@ function ShiftDrill({
   theorem,
   direction,
   response,
+  hideLabel,
   progress,
   ladder,
   onAnswer,
@@ -190,6 +192,8 @@ function ShiftDrill({
   theorem: Theorem | 'both'
   direction: ShiftDirection | 'both'
   response: Response
+  /** Keep which theorem applies out of sight — that is the question. */
+  hideLabel: boolean
   progress: ProgressState
   ladder: { rung: number; run: number }
   onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
@@ -336,10 +340,14 @@ function ShiftDrill({
 
       <div className="card problem-card">
         <div className="problem-meta">
-          <span className="badge">{problem.theorem === 'first' ? 's-axis' : 't-axis'}</span>
-          <span className="badge badge-section">
-            {problem.theorem === 'first' ? '7.3.1' : '7.3.2'}
-          </span>
+          {hideLabel ? null : (
+            <>
+              <span className="badge">{problem.theorem === 'first' ? 's-axis' : 't-axis'}</span>
+              <span className="badge badge-section">
+                {problem.theorem === 'first' ? '7.3.1' : '7.3.2'}
+              </span>
+            </>
+          )}
           <Rail direction={problem.direction} />
           {problem.completeSquare ? (
             <span className="meta-note">Complete the square</span>

@@ -77,6 +77,14 @@ So the whole trainer is organised around that gap.
 - **Progress** — mastery per row per direction, what keeps going wrong counted by mistake
   rather than by row, and a backup/restore box.
 
+A gear beside the theme toggle holds the one setting that is not about what you are drilling
+right now: **hide which row it is**, on by default. A badge reading "(d) Sine" over
+`L⁻¹{5/(s²+4)}` answers half the question before it is asked — recognising the form is the skill,
+and nothing hands it over on an exam. It hides the row in Drill, which theorem applies in Shifts,
+and which method in Fractions. The derivative badge stays: `L{y'''}` names its own order, so there
+is nothing there to give away. Turn it off to put the labels back, which is what you want when you
+are learning one specific row rather than testing recall.
+
 ## What it measures, and what it asks next
 
 Three things decide what you meet next, none of which asks you to configure anything, and none of
@@ -206,7 +214,8 @@ src/
   lib/diagnose.ts      naming a typed wrong answer by sampling it against the distractors
   lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, Review, Progress, About
+  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, Review, Progress,
+                       Settings, About
   store/               localStorage-backed progress and preferences
 ```
 

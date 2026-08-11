@@ -129,6 +129,7 @@ export function Fractions({ progress, prefs, onPrefs, onAnswer, onRung }: Fracti
           guided={prefs.fracGuided}
           kind={prefs.fracKind}
           response={prefs.response}
+          hideLabel={prefs.hideRowLabel}
           progress={progress}
           ladder={ladder}
           onAnswer={onAnswer}
@@ -161,6 +162,7 @@ function FractionDrill({
   guided,
   kind,
   response,
+  hideLabel,
   progress,
   ladder,
   onAnswer,
@@ -169,6 +171,8 @@ function FractionDrill({
   guided: boolean
   kind: FractionKind
   response: Response
+  /** Keep the name of the method out of sight — choosing it is the skill. */
+  hideLabel: boolean
   progress: ProgressState
   ladder: { rung: number; run: number }
   onAnswer: (ids: string[], correct: boolean, detail?: AttemptDetail) => void
@@ -318,7 +322,7 @@ function FractionDrill({
 
       <div className="card problem-card">
         <div className="problem-meta">
-          <span className="badge">{label}</span>
+          {hideLabel ? null : <span className="badge">{label}</span>}
           <span className="badge badge-section">7.2</span>
           <span className="meta-note" style={{ marginLeft: 'auto' }}>
             {TIER_LABEL[tier]}

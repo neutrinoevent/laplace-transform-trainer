@@ -262,9 +262,11 @@ export function Drill({ progress, prefs, onPrefs, onAnswer }: DrillProps) {
 
       <div className="card problem-card">
         <div className="problem-meta">
-          <span className="badge">
-            <span className="badge-letter">({form.letter})</span> {form.name}
-          </span>
+          {prefs.hideRowLabel ? null : (
+            <span className="badge">
+              <span className="badge-letter">({form.letter})</span> {form.name}
+            </span>
+          )}
           <span className="badge badge-section">{sectionOf(problem)}</span>
           <Rail direction={problem.direction} />
           <span className="meta-note" style={{ marginLeft: 'auto' }}>

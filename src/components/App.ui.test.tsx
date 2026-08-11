@@ -9,6 +9,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import App from '../App'
 import { loadProgress } from '../store/progress'
+import { loadPrefs } from '../store/prefs'
 
 let container: HTMLDivElement
 let root: Root
@@ -404,5 +405,68 @@ describe('app shell', () => {
     // Either a pairing or a miss, but the board must have reacted.
     expect(container.querySelectorAll('.tile-done, .tile-wrong').length).toBeGreaterThan(0)
     expect(loadProgress().totalAttempts).toBe(1)
+  })
+})
+
+/**
+ * A label reading "(d) Sine" answers half the question before it is asked, so
+ * it is hidden by default. Anyone using the drill to learn one row rather than
+ * to test recall can put it back.
+ */
+describe('hiding which row it is', () => {
+  const meta = () => container.querySelector('.problem-meta')!.textContent ?? ''
+  const ROW_NAME = /sine|cosine|constant|power|exponential|hyperbolic/i
+
+  const openSettings = () => {
+    const gear = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => b.getAttribute('aria-label') === 'Settings',
+    )!
+    click(gear)
+    return container.querySelector<HTMLInputElement>('.switch')!
+  }
+
+  it('hides the row name in the drill out of the box', () => {
+    click(tab('Drill'))
+    expect(meta()).not.toMatch(ROW_NAME)
+    // The rest of the strip stays: none of it names the row.
+    expect(meta()).toMatch(/7\.\d/)
+  })
+
+  it('puts it back when the switch is turned off, and keeps it off', () => {
+    click(tab('Drill'))
+    const sw = openSettings()
+    expect(sw.checked).toBe(true)
+    act(() => {
+      sw.click()
+    })
+    expect(meta()).toMatch(ROW_NAME)
+    expect(loadPrefs().hideRowLabel).toBe(false)
+  })
+
+  it('hides which theorem applies in the shifts drill', () => {
+    click(tab('Shifts'))
+    click(chip('Drill'))
+    expect(meta()).not.toMatch(/axis|7\.3\./i)
+  })
+
+  it('hides which method it is in the fractions drill', () => {
+    click(tab('Fractions'))
+    click(chip('Drill'))
+    expect(meta()).not.toMatch(/square|shape|factors|quadratic/i)
+  })
+
+  it('leaves the derivative order alone, since the statement already shows it', () => {
+    click(tab('Derivatives'))
+    click(chip('Transform'))
+    // L{y'''} names its own order; hiding the badge would hide nothing.
+    expect(container.querySelector('.problem-meta .badge')).not.toBeNull()
+  })
+
+  it('closes on Escape', () => {
+    click(tab('Drill'))
+    openSettings()
+    expect(container.querySelector('.settings-panel')).not.toBeNull()
+    press(document, 'Escape')
+    expect(container.querySelector('.settings-panel')).toBeNull()
   })
 })

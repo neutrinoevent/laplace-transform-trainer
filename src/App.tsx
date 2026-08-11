@@ -6,6 +6,7 @@ import { Fractions } from './components/Fractions'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
 import { Review } from './components/Review'
+import { Settings } from './components/Settings'
 import { Shifts } from './components/Shifts'
 import { Table } from './components/Table'
 import type { FormId } from './data/forms'
@@ -35,6 +36,22 @@ type View =
   | 'progress'
   | 'about'
 type Theme = 'light' | 'dark' | null
+
+/** Drawn rather than an emoji, so it matches the theme glyph's weight exactly. */
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M8 5.4A2.6 2.6 0 1 0 8 10.6 2.6 2.6 0 0 0 8 5.4Zm0 1.3a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z"
+      />
+      <path
+        fill="currentColor"
+        d="m6.9 1 -.2 1.5a5.4 5.4 0 0 0-1 .6L4.3 2.5l-1.8 3 1.2 1a5.6 5.6 0 0 0 0 1.1l-1.2 1 1.8 3 1.4-.6q.5.4 1 .6L6.9 15h2.2l.2-1.5q.5-.2 1-.6l1.4.6 1.8-3-1.2-1a5.6 5.6 0 0 0 0-1.1l1.2-1-1.8-3-1.4.6a5.4 5.4 0 0 0-1-.6L9.1 1Zm1 1.3h.2l.2 1.3.7.2q.5.2.9.5l.6.4 1.2-.5.6 1-1 .8.1.7a4.3 4.3 0 0 1 0 .6l-.1.7 1 .8-.6 1-1.2-.5-.6.4a4.1 4.1 0 0 1-.9.5l-.7.2-.2 1.3H7.7l-.2-1.3-.7-.2a4.1 4.1 0 0 1-.9-.5l-.6-.4-1.2.5-.6-1 1-.8-.1-.7a4.3 4.3 0 0 1 0-.6l.1-.7-1-.8.6-1 1.2.5.6-.4q.4-.3.9-.5l.7-.2.2-1.3Z"
+      />
+    </svg>
+  )
+}
 
 const THEME_KEY = 'laplace-trainer-theme'
 
@@ -66,6 +83,7 @@ export default function App() {
   // history has already read it and wants the drill.
   const [view, setView] = useState<View>(() => (loadProgress().totalAttempts > 0 ? 'drill' : 'table'))
   const [theme, setTheme] = useState<Theme>(() => initTheme())
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     const root = document.documentElement
@@ -134,9 +152,29 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <button className="btn icon-btn" onClick={toggleTheme} aria-label="Toggle color theme">
-          ◐
-        </button>
+        <div className="header-tools">
+          <div className="settings-anchor">
+            <button
+              className={settingsOpen ? 'btn icon-btn icon-btn-active' : 'btn icon-btn'}
+              onClick={() => setSettingsOpen((open) => !open)}
+              aria-label="Settings"
+              aria-expanded={settingsOpen}
+              title="Settings"
+            >
+              <GearIcon />
+            </button>
+            {settingsOpen ? (
+              <Settings
+                prefs={prefs}
+                onPrefs={updatePrefs}
+                onClose={() => setSettingsOpen(false)}
+              />
+            ) : null}
+          </div>
+          <button className="btn icon-btn" onClick={toggleTheme} aria-label="Toggle color theme">
+            ◐
+          </button>
+        </div>
       </header>
 
       <main className="main">
