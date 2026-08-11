@@ -22,6 +22,10 @@ export interface Prefs {
   shiftDirection: 'both' | 'forward' | 'inverse'
   /** Mix translated forms into the ordinary seven-row drill. */
   shiftsInDrill: boolean
+  /** Which face of partial fractions was last open. */
+  fracView: 'rule' | 'drill'
+  fracGuided: boolean
+  fracKind: 'square' | 'form' | 'linear' | 'hard'
 }
 
 const KEY = 'laplace-trainer-prefs-v1'
@@ -37,6 +41,9 @@ export const defaultPrefs = (): Prefs => ({
   shiftTheorem: 'both',
   shiftDirection: 'both',
   shiftsInDrill: false,
+  fracView: 'rule',
+  fracGuided: true,
+  fracKind: 'linear',
 })
 
 export function loadPrefs(): Prefs {

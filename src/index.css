@@ -157,7 +157,8 @@ code {
   border: none;
   background: transparent;
   color: var(--ink-2);
-  padding: 6px 14px;
+  /* Nine sections have to share one line at the app's full width. */
+  padding: 6px 10px;
   font: inherit;
   font-size: 13.5px;
   font-weight: 550;
@@ -1004,6 +1005,23 @@ code {
   padding: 10px 0 6px;
   font-size: 17px;
   overflow-x: auto;
+}
+
+/* ---- partial fractions ---- */
+
+.piece-table td {
+  vertical-align: middle;
+}
+
+.piece-tex {
+  font-size: 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  min-width: 1px;
+}
+
+.piece-table td:last-child {
+  min-width: 220px;
 }
 
 /* ---- the translation ladder ---- */

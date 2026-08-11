@@ -1,5 +1,6 @@
 import { FORM_IDS, type FormId } from '../data/forms'
 import { DERIV_ITEM } from '../generators/derivative'
+import { FRACTION_ITEM_IDS } from '../generators/fraction'
 import { SHIFT_ITEMS } from '../generators/shift'
 import { itemId, type Direction } from '../generators/types'
 import { statsFor, type ProgressState } from '../store/progress'
@@ -36,6 +37,7 @@ export function overallScore(p: ProgressState): number {
     DERIV_ITEM.transform,
     DERIV_ITEM.solve,
     ...SHIFT_ITEMS,
+    ...FRACTION_ITEM_IDS,
   ]
   return ids.reduce((sum, id) => sum + statsFor(p, id).ema, 0) / ids.length
 }

@@ -9,10 +9,16 @@
 
 import { CARD_BY_ID, CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { FRACTION_ITEM_IDS } from '../generators/fraction'
 import { SHIFT_ITEMS } from '../generators/shift'
 
 /** Items that are drilled but never scheduled for review. */
-const DRILL_ONLY = new Set<string>([DERIV_ITEM.transform, DERIV_ITEM.solve, ...SHIFT_ITEMS])
+const DRILL_ONLY = new Set<string>([
+  DERIV_ITEM.transform,
+  DERIV_ITEM.solve,
+  ...SHIFT_ITEMS,
+  ...FRACTION_ITEM_IDS,
+])
 
 export interface ItemStats {
   attempts: number
@@ -48,6 +54,9 @@ export interface ProgressState {
    */
   shiftRung: number | null
   shiftRun: number
+  /** Position on the partial-fractions ladder. */
+  fracRung: number | null
+  fracRun: number
 }
 
 export type Grade = 'again' | 'good' | 'easy'
@@ -93,6 +102,8 @@ export function emptyProgress(): ProgressState {
     bestBoard: {},
     shiftRung: null,
     shiftRun: 0,
+    fracRung: null,
+    fracRun: 0,
   }
 }
 
@@ -108,6 +119,8 @@ export function loadProgress(): ProgressState {
       bestBoard: parsed.bestBoard ?? {},
       shiftRung: parsed.shiftRung ?? null,
       shiftRun: parsed.shiftRun ?? 0,
+      fracRung: parsed.fracRung ?? null,
+      fracRun: parsed.fracRun ?? 0,
     }
   } catch {
     return emptyProgress()
@@ -209,10 +222,17 @@ export function recordGrade(state: ProgressState, id: string, grade: Grade): Pro
   return next
 }
 
-/** Move the translation ladder, keeping it beside the answer that moved it. */
-export function recordRung(state: ProgressState, rung: number, run: number): ProgressState {
-  if (state.shiftRung === rung && state.shiftRun === run) return state
-  const next: ProgressState = { ...state, shiftRung: rung, shiftRun: run }
+/** Move a ladder, keeping it beside the answer that moved it. */
+export function recordRung(
+  state: ProgressState,
+  which: 'shift' | 'frac',
+  rung: number,
+  run: number,
+): ProgressState {
+  const rungKey = which === 'shift' ? 'shiftRung' : 'fracRung'
+  const runKey = which === 'shift' ? 'shiftRun' : 'fracRun'
+  if (state[rungKey] === rung && state[runKey] === run) return state
+  const next: ProgressState = { ...state, [rungKey]: rung, [runKey]: run }
   saveProgress(next)
   return next
 }

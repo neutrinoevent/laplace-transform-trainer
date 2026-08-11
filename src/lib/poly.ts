@@ -34,6 +34,25 @@ export function polyTex(p: Poly, v = 's'): string {
     .join('')
 }
 
+export const polyAdd = (a: Poly, b: Poly): Poly =>
+  Array.from({ length: Math.max(a.length, b.length) }, (_, i) => (a[i] ?? 0) + (b[i] ?? 0))
+
+export const polyScale = (p: Poly, c: number): Poly => p.map((x) => x * c)
+
+export function polyMul(a: Poly, b: Poly): Poly {
+  if (!a.length || !b.length) return []
+  const out = new Array<number>(a.length + b.length - 1).fill(0)
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) out[i + j] += a[i] * b[j]
+  }
+  return out
+}
+
+export const polyMulAll = (ps: Poly[]): Poly => ps.reduce(polyMul, [1])
+
+/** Drop trailing zeros so degree and equality mean what they say. */
+export const polyTrim = (p: Poly): Poly => p.slice(0, polyDegree(p) + 1)
+
 /** Real roots, for keeping the answer checker's samples clear of the poles. */
 export function polyRealRoots(p: Poly): number[] {
   const d = polyDegree(p)

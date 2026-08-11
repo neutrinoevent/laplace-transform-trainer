@@ -13,7 +13,8 @@
  * a returning one starts where they left off; nobody is asked what they know.
  */
 
-import { shiftItemId } from '../generators/shift'
+import { FRACTION_ITEM_IDS } from '../generators/fraction'
+import { SHIFT_ITEMS } from '../generators/shift'
 import { statsFor, type ProgressState } from '../store/progress'
 
 export interface Rung {
@@ -23,7 +24,13 @@ export interface Rung {
   blurb: string
 }
 
-export const RUNGS: Rung[] = [
+/** A ladder is a set of rungs plus the items whose evidence seeds it. */
+export interface Ladder {
+  rungs: Rung[]
+  items: string[]
+}
+
+export const SHIFT_RUNGS: Rung[] = [
   {
     id: 0,
     name: 'Anchored',
@@ -48,7 +55,36 @@ export const RUNGS: Rung[] = [
   },
 ]
 
-export const TOP_RUNG = RUNGS.length - 1
+export const FRACTION_RUNGS: Rung[] = [
+  {
+    id: 0,
+    name: 'Completing the square',
+    blurb:
+      'The sub-method on its own: turning an irreducible quadratic into a square plus a constant, which is what makes it a table row at all.',
+  },
+  {
+    id: 1,
+    name: 'The shape',
+    blurb:
+      'Choosing the decomposition a denominator calls for, before any constants are worked out.',
+  },
+  {
+    id: 2,
+    name: 'Distinct factors',
+    blurb: 'Decomposing over distinct linear factors and inverting each piece.',
+  },
+  {
+    id: 3,
+    name: 'Everything',
+    blurb:
+      'Repeated factors, which invert through Theorem 7.3.1, and irreducible quadratics, which need the square completed first.',
+  },
+]
+
+export const SHIFT_LADDER: Ladder = { rungs: SHIFT_RUNGS, items: SHIFT_ITEMS }
+export const FRACTION_LADDER: Ladder = { rungs: FRACTION_RUNGS, items: FRACTION_ITEM_IDS }
+
+export const topRung = (ladder: Ladder): number => ladder.rungs.length - 1
 
 const PROMOTE_AT = 3
 const DEMOTE_AT = 2
@@ -58,16 +94,15 @@ const DEMOTE_AT = 2
  * the ladder has no stored position — so somebody who has been meeting
  * translated rows in the ordinary drill does not start from the bottom.
  */
-export function seedRung(progress: ProgressState): number {
-  const items = (['first', 'second'] as const).flatMap((t) =>
-    (['forward', 'inverse'] as const).map((d) => statsFor(progress, shiftItemId(t, d))),
-  )
-  const attempts = items.reduce((n, s) => n + s.attempts, 0)
+export function seedRung(ladder: Ladder, progress: ProgressState): number {
+  const top = topRung(ladder)
+  const stats = ladder.items.map((id) => statsFor(progress, id))
+  const attempts = stats.reduce((n, s) => n + s.attempts, 0)
   if (attempts < 4) return 0
-  const mean = items.reduce((n, s) => n + s.ema, 0) / items.length
-  if (mean >= 0.8) return TOP_RUNG
-  if (mean >= 0.6) return 2
-  if (mean >= 0.35) return 1
+  const mean = stats.reduce((n, s) => n + s.ema, 0) / stats.length
+  if (mean >= 0.8) return top
+  if (mean >= 0.6) return Math.min(2, top)
+  if (mean >= 0.35) return Math.min(1, top)
   return 0
 }
 
@@ -78,9 +113,9 @@ export interface LadderState {
 }
 
 /** Move the ladder on one answer. Promotion is quick; demotion is quicker. */
-export function stepLadder(state: LadderState, correct: boolean): LadderState {
+export function stepLadder(ladder: Ladder, state: LadderState, correct: boolean): LadderState {
   const run = correct ? Math.max(0, state.run) + 1 : Math.min(0, state.run) - 1
-  if (correct && run >= PROMOTE_AT && state.rung < TOP_RUNG) {
+  if (correct && run >= PROMOTE_AT && state.rung < topRung(ladder)) {
     return { rung: state.rung + 1, run: 0 }
   }
   if (!correct && -run >= DEMOTE_AT && state.rung > 0) {
@@ -90,7 +125,19 @@ export function stepLadder(state: LadderState, correct: boolean): LadderState {
 }
 
 /** How close the current rung is to promoting, for the progress strip. */
-export const rungProgress = (state: LadderState): number =>
-  state.rung >= TOP_RUNG ? 1 : Math.max(0, Math.min(1, state.run / PROMOTE_AT))
+export const rungProgress = (ladder: Ladder, state: LadderState): number =>
+  state.rung >= topRung(ladder) ? 1 : Math.max(0, Math.min(1, state.run / PROMOTE_AT))
+
+/** The ladder position in force, seeded the first time from what is on record. */
+export function ladderOf(
+  ladder: Ladder,
+  progress: ProgressState,
+  stored: { rung: number | null; run: number },
+): LadderState {
+  return {
+    rung: stored.rung ?? seedRung(ladder, progress),
+    run: stored.rung === null ? 0 : stored.run,
+  }
+}
 
 export { PROMOTE_AT }

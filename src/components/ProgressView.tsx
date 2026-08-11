@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FORMS } from '../data/forms'
 import { CARD_BY_ID, RULE_CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { FRACTION_ITEMS } from '../generators/fraction'
 import { shiftItemId } from '../generators/shift'
 import { itemId } from '../generators/types'
 import { TIER_LABEL, overallScore, tierFor } from '../lib/mastery'
@@ -126,6 +127,49 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
           </tbody>
         </table>
 
+      </div>
+
+      <div className="card table-card">
+        <h2 className="section-title">Partial fractions</h2>
+        <p className="meta-note" style={{ marginBottom: 12 }}>
+          The method and the sub-method it leans on, scored separately — completing the square is
+          needed here and again for the first translation theorem.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th>Mastery</th>
+              <th className="num">Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(
+              [
+                [FRACTION_ITEMS.square, 'Completing the square', 'An irreducible quadratic to $(s-a)^2 + k^2$'],
+                [FRACTION_ITEMS.form, 'The shape', 'Which decomposition a denominator calls for'],
+                [FRACTION_ITEMS.linear, 'Distinct factors', 'Decompose and invert over distinct linear factors'],
+                [FRACTION_ITEMS.hard, 'Repeated & quadratic', 'The cases needing Theorem 7.3.1 or the square completed'],
+              ] as const
+            ).map(([id, name, blurb]) => {
+              const st = statsFor(progress, id)
+              return (
+                <tr key={id}>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{name}</div>
+                    <div className="meta-note">
+                      <Rich text={blurb} />
+                    </div>
+                  </td>
+                  <td>
+                    <Meter value={st.ema} />
+                  </td>
+                  <td className="num">{st.attempts}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
       <div className="card table-card">

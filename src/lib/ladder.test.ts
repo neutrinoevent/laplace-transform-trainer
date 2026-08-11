@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RUNGS, TOP_RUNG, seedRung, stepLadder, type LadderState } from './ladder'
+import { SHIFT_LADDER, seedRung, stepLadder, topRung, type LadderState } from './ladder'
 import { shiftItemId } from '../generators/shift'
 import { emptyProgress, emptyStats, type ProgressState } from '../store/progress'
 import { nextShiftProblem } from '../generators/shift'
@@ -16,33 +16,33 @@ function withMastery(ema: number, attempts = 8): ProgressState {
 
 /** Answer `results` in order and report where the ladder ends up. */
 function climb(results: boolean[], from: LadderState = { rung: 0, run: 0 }): LadderState {
-  return results.reduce(stepLadder, from)
+  return results.reduce((state, correct) => stepLadder(SHIFT_LADDER, state, correct), from)
 }
 
 describe('seeding from evidence', () => {
   it('starts a newcomer at the bottom', () => {
-    expect(seedRung(emptyProgress())).toBe(0)
+    expect(seedRung(SHIFT_LADDER, emptyProgress())).toBe(0)
   })
 
   it('does not judge on one or two answers', () => {
-    expect(seedRung(withMastery(0.9, 0))).toBe(0)
+    expect(seedRung(SHIFT_LADDER, withMastery(0.9, 0))).toBe(0)
   })
 
   it('starts a fluent returning student at the top', () => {
-    expect(seedRung(withMastery(0.9))).toBe(TOP_RUNG)
+    expect(seedRung(SHIFT_LADDER, withMastery(0.9))).toBe(topRung(SHIFT_LADDER))
   })
 
   it('places a partly fluent student partway up', () => {
-    expect(seedRung(withMastery(0.65))).toBe(2)
-    expect(seedRung(withMastery(0.4))).toBe(1)
-    expect(seedRung(withMastery(0.1))).toBe(0)
+    expect(seedRung(SHIFT_LADDER, withMastery(0.65))).toBe(2)
+    expect(seedRung(SHIFT_LADDER, withMastery(0.4))).toBe(1)
+    expect(seedRung(SHIFT_LADDER, withMastery(0.1))).toBe(0)
   })
 })
 
 describe('moving on evidence', () => {
   it('reaches the full section in nine right answers', () => {
     const end = climb(Array(9).fill(true))
-    expect(end.rung).toBe(TOP_RUNG)
+    expect(end.rung).toBe(topRung(SHIFT_LADDER))
   })
 
   it('does not promote on a broken run', () => {
@@ -53,21 +53,21 @@ describe('moving on evidence', () => {
 
   it('drops back after two wrong, and no further than the bottom', () => {
     const top = climb(Array(9).fill(true))
-    expect(stepLadder(stepLadder(top, false), false).rung).toBe(TOP_RUNG - 1)
+    expect(stepLadder(SHIFT_LADDER, stepLadder(SHIFT_LADDER, top, false), false).rung).toBe(topRung(SHIFT_LADDER) - 1)
     const floor = climb(Array(10).fill(false))
     expect(floor.rung).toBe(0)
   })
 
   it('never climbs past the top', () => {
-    expect(climb(Array(40).fill(true)).rung).toBe(TOP_RUNG)
+    expect(climb(Array(40).fill(true)).rung).toBe(topRung(SHIFT_LADDER))
   })
 
   it('recovers as fast as it fell', () => {
     let state = climb(Array(9).fill(true))
     state = climb([false, false], state) // demoted
-    expect(state.rung).toBe(TOP_RUNG - 1)
+    expect(state.rung).toBe(topRung(SHIFT_LADDER) - 1)
     state = climb([true, true, true], state)
-    expect(state.rung).toBe(TOP_RUNG)
+    expect(state.rung).toBe(topRung(SHIFT_LADDER))
   })
 })
 
@@ -118,8 +118,8 @@ describe('what each rung serves', () => {
   })
 
   it('describes every rung it can be on', () => {
-    expect(RUNGS).toHaveLength(TOP_RUNG + 1)
-    for (const r of RUNGS) {
+    expect(SHIFT_LADDER.rungs).toHaveLength(topRung(SHIFT_LADDER) + 1)
+    for (const r of SHIFT_LADDER.rungs) {
       expect(r.name.length).toBeGreaterThan(0)
       expect(r.blurb.length).toBeGreaterThan(20)
     }

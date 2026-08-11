@@ -31,6 +31,10 @@ export function About() {
           <Rich text="— the two translation theorems taught together, because they are one idea in two domains: an exponential in $t$ slides the transform along the $s$-axis, an exponential in $s$ delays the function along the $t$-axis. The unit step is taught here too, with figures, since it is the notation the second theorem is written in. The drill builds up on its own: it starts with the untranslated row given, so the only new step is the translation, and widens as you show you no longer need the scaffold." />
         </li>
         <li>
+          <strong>Fractions</strong>{' '}
+          <Rich text="— partial fractions, the step that makes the table apply to anything you are actually handed, and completing the square, the sub-method it shares with the first translation theorem. Each shape of piece is shown beside the row it inverts to, which is the reason the shapes are what they are." />
+        </li>
+        <li>
           <strong>Derivatives</strong>{' '}
           <Rich text="— Theorem 7.2.2 three ways: the pattern, with the invariant that fixes it made visible; producing $\mathcal{L}\{y^{(n)}\}$; and using it to turn an initial-value problem into a formula for $Y(s)$." />
         </li>
@@ -51,7 +55,7 @@ export function About() {
         Not in this version
       </h3>
       <p>
-        <Rich text="Derivatives of a transform, convolution, periodic functions, the Dirac delta, and partial fractions beyond splitting one shared denominator — so the Solve drill stops at a formula for $Y(s)$ and does not invert it. The second translation theorem is drilled as the book states it, on $f(t-a)\\,\\mathcal{U}(t-a)$; the alternative form $\\mathcal{L}\\{g(t)\\,\\mathcal{U}(t-a)\\} = e^{-as}\\mathcal{L}\\{g(t+a)\\}$ is stated but not generated." />
+        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stops at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a formula for $Y(s)$ rather than carrying it through the decomposition. The second translation theorem is drilled as the book states it, on $f(t-a)\\,\\mathcal{U}(t-a)$; the alternative form $\\mathcal{L}\\{g(t)\\,\\mathcal{U}(t-a)\\} = e^{-as}\\mathcal{L}\\{g(t+a)\\}$ is stated but not generated." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

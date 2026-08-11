@@ -133,6 +133,7 @@ describe('app shell', () => {
       ['Drill', '.problem-card'],
       ['Match', '.board'],
       ['Shifts', '.pair-half'],
+      ['Fractions', '.piece-table'],
       ['Derivatives', '.expansion'],
       ['Review', '.problem-card'],
       ['Progress', '.stat-row'],
@@ -162,6 +163,35 @@ describe('app shell', () => {
 
     click(button('Drill this →'))
     expect(container.querySelector('.problem-card')).not.toBeNull()
+  })
+
+  it('starts a newcomer to fractions on the sub-method', () => {
+    click(tab('Fractions'))
+    click(chip('Drill'))
+    expect(chip('Guided').className).toContain('chip-active')
+    // Completing the square is needed twice over, so it is learned first.
+    expect(container.querySelector('.ladder-name')?.textContent).toBe('Completing the square')
+  })
+
+  it('sends the Learn page straight to the sub-method it was reading about', () => {
+    click(tab('Fractions'))
+    const square = [...container.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (b) => b.textContent?.trim() === 'Drill this →',
+    )
+    expect(square.length).toBe(2)
+    click(square[1])
+    expect(chip('Choose mine').className).toContain('chip-active')
+    expect(chip('Complete the square').className).toContain('chip-active')
+  })
+
+  it('answers a fractions question against its own item', () => {
+    click(tab('Fractions'))
+    click(chip('Drill'))
+    click(container.querySelectorAll<HTMLElement>('.option')[0])
+    expect(container.querySelector('.feedback')).not.toBeNull()
+    const ids = Object.keys(loadProgress().byId)
+    expect(ids).toHaveLength(1)
+    expect(ids[0]).toMatch(/^frac:(square|form|linear|hard)$/)
   })
 
   it('starts a newcomer to shifts on the anchored rung', () => {

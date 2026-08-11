@@ -10,6 +10,7 @@
 
 import { FORMS, type FormId } from './forms'
 import { GENERAL_TEX } from './derivatives'
+import { SQUARE_RULE } from './fractions'
 import { FIRST_TEX, SECOND_STEP_TEX, SECOND_TEX } from './shifts'
 import { invLap, lap } from '../lib/expr'
 import { itemId, type Direction } from '../generators/types'
@@ -89,6 +90,27 @@ export const RULE_CARDS: Card[] = [
     promptTex: `${lap('f(t-a)\\,\\mathcal{U}(t-a)')} \\;=\\; ?`,
     answerTex: SECOND_TEX.replace('\\mathcal{L}\\{f(t-a)\\,\\mathcal{U}(t-a)\\} = ', ''),
     note: `It applies only to the row itself running on $t-a$. On its own, ${'$' + SECOND_STEP_TEX + '$'}.`,
+  },
+  {
+    id: 'rule:partial-fractions',
+    form: null,
+    direction: null,
+    section: '7.2',
+    label: 'The decomposition to write down',
+    promptTex: '\\dfrac{N(s)}{(s-a)(s-b)^2\\left(s^2+ps+q\\right)} \\;=\\; ?',
+    answerTex:
+      '\\dfrac{A}{s-a} + \\dfrac{B}{s-b} + \\dfrac{C}{(s-b)^2} + \\dfrac{Ds+E}{s^2+ps+q}',
+    note: 'One term per factor; a repeated factor takes one for every power up to its multiplicity; an irreducible quadratic takes a linear numerator. Each shape is the one that inverts to a row.',
+  },
+  {
+    id: 'rule:complete-square',
+    form: null,
+    direction: null,
+    section: '7.2',
+    label: 'Completing the square',
+    promptTex: 's^2 + bs + c \\;=\\; ?',
+    answerTex: SQUARE_RULE.replace('s^2 + bs + c = ', ''),
+    note: 'Half the coefficient of $s$ goes inside the bracket; its square comes back off the constant. What is left is $k^2$, and the bracket is the translation — rows (d) and (e) under Theorem 7.3.1.',
   },
   {
     id: 'rule:fixup',

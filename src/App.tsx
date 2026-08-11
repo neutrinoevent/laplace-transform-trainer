@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { About } from './components/About'
 import { Derivatives } from './components/Derivatives'
 import { Drill } from './components/Drill'
+import { Fractions } from './components/Fractions'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
 import { Review } from './components/Review'
@@ -27,6 +28,7 @@ type View =
   | 'drill'
   | 'match'
   | 'shifts'
+  | 'fractions'
   | 'derivatives'
   | 'review'
   | 'progress'
@@ -40,6 +42,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'drill', label: 'Drill' },
   { id: 'match', label: 'Match' },
   { id: 'shifts', label: 'Shifts' },
+  { id: 'fractions', label: 'Fractions' },
   { id: 'derivatives', label: 'Derivatives' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
@@ -93,7 +96,8 @@ export default function App() {
     setProgress((p) => recordAttempt(p, ids, correct))
   const onGrade = (id: string, grade: Grade) => setProgress((p) => recordGrade(p, id, grade))
   const onBoard = (size: number, ms: number) => setProgress((p) => recordBoard(p, size, ms))
-  const onRung = (rung: number, run: number) => setProgress((p) => recordRung(p, rung, run))
+  const onRung = (which: 'shift' | 'frac') => (rung: number, run: number) =>
+    setProgress((p) => recordRung(p, which, rung, run))
   const onImport = (json: string): boolean => {
     const next = importProgress(json)
     if (next) setProgress(next)
@@ -154,7 +158,16 @@ export default function App() {
             prefs={prefs}
             onPrefs={updatePrefs}
             onAnswer={onAnswer}
-            onRung={onRung}
+            onRung={onRung('shift')}
+          />
+        ) : null}
+        {view === 'fractions' ? (
+          <Fractions
+            progress={progress}
+            prefs={prefs}
+            onPrefs={updatePrefs}
+            onAnswer={onAnswer}
+            onRung={onRung('frac')}
           />
         ) : null}
         {view === 'derivatives' ? (

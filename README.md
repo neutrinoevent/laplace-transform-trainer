@@ -62,6 +62,11 @@ So the whole trainer is organised around that gap.
   theorems in both directions, including the inverse case that only yields to completing the square,
   and **builds up to that on its own** — see below. A `+ Shifts` switch in the ordinary Drill mixes
   translated rows in with the plain ones.
+- **Fractions** — partial fractions, and completing the square. Every inverse problem elsewhere in
+  the app arrives already in row form or one split away; real ones arrive as a single rational
+  function. This is the step that closes that gap, and where everything else meets: a repeated
+  linear factor inverts through Theorem 7.3.1, and an irreducible quadratic only yields once the
+  square is completed. Laddered like Shifts, starting with the sub-method on its own.
 - **Derivatives** — Theorem 7.2.2 (§7.2.2), in three faces. *Rule* states it, derives (6) by parts,
   shows (7) falling out of (6), and writes the expansion out at any order beside a table of the
   invariant that fixes it. *Transform* drills producing `L{y⁽ⁿ⁾}`, with the initial values left as
@@ -82,6 +87,9 @@ than a flat set. Nobody is asked what they know: the rung is inferred, shown, an
 | 2 | **On its own** | One theorem at a time, both directions, without the row handed over. |
 | 3 | **Both mixed** | Both theorems interleaved, so deciding *which one applies* is part of the question. Fix-ups return. |
 | 4 | **Everything** | Translations hidden inside quadratics, alongside the fix-ups. The full section. |
+
+The Fractions drill runs the same machinery over its own four rungs — completing the square, then
+choosing the shape, then distinct factors, then repeated factors and irreducible quadratics.
 
 Three right in a row promotes; two wrong demotes. A fluent student reaches the top in nine
 questions, and a returning one does not start over — the ladder is seeded from whatever evidence
@@ -109,9 +117,10 @@ under the box shows how the expression was parsed before you commit to it.
 
 ## Not in this version
 
-Derivatives of a transform, convolution, periodic functions, the Dirac delta, and partial fractions
-beyond splitting one shared denominator. The Solve drill therefore stops at a formula for `Y(s)` and
-does not invert it. The second translation theorem is drilled as the book states it, on
+Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions
+stops at repeated linear factors and a single irreducible quadratic, which is the range the
+exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a
+formula for `Y(s)` rather than carrying it on through the decomposition. The second translation theorem is drilled as the book states it, on
 `f(t-a)U(t-a)`; the alternative form `L{g(t)U(t-a)} = e^{-as}L{g(t+a)}` is stated in the reference
 but never generated.
 
@@ -135,15 +144,17 @@ src/
   data/theorems.ts     the three theorems as the book states them, for quoting verbatim
   data/derivatives.ts  the derivative rule: equations (6)-(8), its origin, its invariant
   data/shifts.ts       the translation theorems, the unit step, and the piecewise conversions
+  data/fractions.ts    the decomposition method, the piece table, and completing the square
   data/cards.ts        the review deck, derived from the rows
   lib/frac.ts          exact rationals, so 1/3! prints as a fraction and not as 0.1666…
   lib/check.ts         parsing and numeric grading of typed answers
   lib/expr.ts          expression-level TeX
-  lib/poly.ts          integer polynomials, for the characteristic polynomial and its roots
+  lib/poly.ts          integer polynomials: characteristic polynomials, and multiplying a
+                       decomposition back out to the fraction it came from
   lib/mastery.ts       tiers, and the scaffolding that fades with them
   lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Shifts, Derivatives, Review, Progress, About
+  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, Review, Progress, About
   store/               localStorage-backed progress and preferences
 ```
 
