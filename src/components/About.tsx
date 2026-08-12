@@ -39,6 +39,10 @@ export function About() {
           <Rich text="— Theorem 7.2.2 three ways: the pattern, with the invariant that fixes it made visible; producing $\mathcal{L}\{y^{(n)}\}$; and using it to turn an initial-value problem into a formula for $Y(s)$." />
         </li>
         <li>
+          <strong>IVPs</strong>{' '}
+          <Rich text="— the capstone: an initial-value problem in, a function of $t$ out. Transform the equation, solve for $Y(s)$, decompose, invert. Mostly second order, with first order as the on-ramp and the occasional third. The problems are built from the equation forwards rather than from a chosen answer backwards, because an initial-value problem does not let you pick your own denominator." />
+        </li>
+        <li>
           <strong>Review</strong> — spaced repetition on the rows stated generically, so they are
           still there at the exam.
         </li>
@@ -85,7 +89,7 @@ export function About() {
       <p>
         {/* Single backslashes: a JSX attribute string is not escape-processed,
             so a doubled one reaches KaTeX as its line break. */}
-        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stops at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a formula for $Y(s)$ rather than carrying it through the decomposition. The second translation theorem is drilled as the book states it, on $f(t-a)\,\mathcal{U}(t-a)$; the alternative form $\mathcal{L}\{g(t)\,\mathcal{U}(t-a)\} = e^{-as}\mathcal{L}\{g(t+a)\}$ is stated but not generated." />
+        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stop at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; a repeated quadratic factor is never generated, so an initial-value problem whose forcing resonates with a complex pair — which would invert through $t\sin kt$ — is not posed. A repeated real root is fine and does appear, since $1/(s-a)^2$ is row (b) translated. The second translation theorem is drilled as the book states it, on $f(t-a)\,\mathcal{U}(t-a)$; the alternative form $\mathcal{L}\{g(t)\,\mathcal{U}(t-a)\} = e^{-as}\mathcal{L}\{g(t+a)\}$ is stated but not generated." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

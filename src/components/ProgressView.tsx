@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FORMS } from '../data/forms'
 import { CARD_BY_ID, RULE_CARDS } from '../data/cards'
 import { DERIV_ITEM } from '../generators/derivative'
+import { IVP_ITEM } from '../generators/ivp'
 import { SLIP_BY_ID } from '../data/slips'
 import { FACET_LABEL, hardFacet } from '../lib/facets'
 import { FRACTION_ITEMS } from '../generators/fraction'
@@ -323,6 +324,11 @@ export function ProgressView({ progress, onReset, onImport }: ProgressViewProps)
                 id: DERIV_ITEM.solve,
                 name: 'Solve',
                 blurb: 'An initial-value problem to a formula for $Y(s)$',
+              },
+              {
+                id: IVP_ITEM,
+                name: 'All the way through',
+                blurb: 'An initial-value problem to a function of $t$: transform, solve, decompose, invert',
               },
             ].map((row) => {
               const st = statsFor(progress, row.id)

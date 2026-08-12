@@ -5,6 +5,7 @@ import { Drill } from './components/Drill'
 import { Fractions } from './components/Fractions'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
+import { IVP } from './components/IVP'
 import { Review } from './components/Review'
 import { Settings } from './components/Settings'
 import { Shifts } from './components/Shifts'
@@ -32,6 +33,7 @@ type View =
   | 'shifts'
   | 'fractions'
   | 'derivatives'
+  | 'ivp'
   | 'review'
   | 'progress'
   | 'about'
@@ -62,6 +64,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'shifts', label: 'Shifts' },
   { id: 'fractions', label: 'Fractions' },
   { id: 'derivatives', label: 'Derivatives' },
+  { id: 'ivp', label: 'IVPs' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
   { id: 'about', label: 'About' },
@@ -115,7 +118,7 @@ export default function App() {
     setProgress((p) => recordAttempt(p, ids, correct, detail))
   const onGrade = (id: string, grade: Grade) => setProgress((p) => recordGrade(p, id, grade))
   const onBoard = (size: number, ms: number) => setProgress((p) => recordBoard(p, size, ms))
-  const onRung = (which: 'shift' | 'frac') => (rung: number, run: number) =>
+  const onRung = (which: 'shift' | 'frac' | 'ivp') => (rung: number, run: number) =>
     setProgress((p) => recordRung(p, which, rung, run))
   const onImport = (json: string): boolean => {
     const next = importProgress(json)
@@ -211,6 +214,15 @@ export default function App() {
         ) : null}
         {view === 'derivatives' ? (
           <Derivatives progress={progress} prefs={prefs} onPrefs={updatePrefs} onAnswer={onAnswer} />
+        ) : null}
+        {view === 'ivp' ? (
+          <IVP
+            progress={progress}
+            prefs={prefs}
+            onPrefs={updatePrefs}
+            onAnswer={onAnswer}
+            onRung={onRung('ivp')}
+          />
         ) : null}
         {view === 'review' ? (
           <Review progress={progress} prefs={prefs} onPrefs={updatePrefs} onGrade={onGrade} />

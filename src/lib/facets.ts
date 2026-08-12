@@ -53,6 +53,8 @@ export function hardFacet(itemId: string): Facet | null {
       return 'forced'
     case 'deriv:transform':
       return 'high-order'
+    case 'ivp:solve':
+      return 'forced'
     default:
       return null
   }

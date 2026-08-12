@@ -157,8 +157,9 @@ code {
   border: none;
   background: transparent;
   color: var(--ink-2);
-  /* Nine sections have to share one line at the app's full width. */
-  padding: 6px 10px;
+  /* Ten sections have to share one line at the app's full width, beside the
+     brand and the two icon buttons. */
+  padding: 6px 7px;
   font: inherit;
   font-size: 13.5px;
   font-weight: 550;
@@ -219,6 +220,17 @@ code {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* The initial values sit under the equation, not inside it. */
+.ivp-given {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: -4px;
+  padding-bottom: 4px;
 }
 
 /* ---- settings ---- */

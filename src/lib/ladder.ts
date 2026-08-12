@@ -14,6 +14,7 @@
  */
 
 import { FRACTION_ITEM_IDS } from '../generators/fraction'
+import { IVP_ITEM } from '../generators/ivp'
 import { SHIFT_ITEMS } from '../generators/shift'
 import { statsFor, type ProgressState } from '../store/progress'
 
@@ -81,7 +82,34 @@ export const FRACTION_RUNGS: Rung[] = [
   },
 ]
 
+export const IVP_RUNGS: Rung[] = [
+  {
+    id: 0,
+    name: 'First order',
+    blurb:
+      'One derivative, so one initial value and one root. The four moves with as little arithmetic in the way as possible.',
+  },
+  {
+    id: 1,
+    name: 'Second order',
+    blurb: 'Two distinct real roots, and a forcing function more often than not.',
+  },
+  {
+    id: 2,
+    name: 'Repeated & complex',
+    blurb:
+      'Roots that repeat, which produce a $t$, and complex pairs, which oscillate and need the square completed.',
+  },
+  {
+    id: 3,
+    name: 'Everything',
+    blurb:
+      'Every shape, richer forcing, and now and then a third-order equation.',
+  },
+]
+
 export const SHIFT_LADDER: Ladder = { rungs: SHIFT_RUNGS, items: SHIFT_ITEMS }
+export const IVP_LADDER: Ladder = { rungs: IVP_RUNGS, items: [IVP_ITEM] }
 export const FRACTION_LADDER: Ladder = { rungs: FRACTION_RUNGS, items: FRACTION_ITEM_IDS }
 
 export const topRung = (ladder: Ladder): number => ladder.rungs.length - 1

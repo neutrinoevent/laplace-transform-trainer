@@ -35,6 +35,9 @@ export interface Prefs {
   fracView: 'rule' | 'drill'
   fracGuided: boolean
   fracKind: 'square' | 'form' | 'linear' | 'hard'
+  /** Which face of initial-value problems was last open. */
+  ivpView: 'rule' | 'drill'
+  ivpGuided: boolean
 }
 
 const KEY = 'laplace-trainer-prefs-v1'
@@ -54,6 +57,8 @@ export const defaultPrefs = (): Prefs => ({
   fracView: 'rule',
   fracGuided: true,
   fracKind: 'linear',
+  ivpView: 'rule',
+  ivpGuided: true,
 })
 
 export function loadPrefs(): Prefs {

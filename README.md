@@ -72,6 +72,13 @@ So the whole trainer is organised around that gap.
   invariant that fixes it. *Transform* drills producing `L{y⁽ⁿ⁾}`, with the initial values left as
   symbols or substituted as numbers. *Solve* applies it to an initial-value problem and asks for
   `Y(s)` — which pulls the seven basic rows back in through the forcing function.
+- **IVPs** — the capstone: an initial-value problem in, a function of `t` out. *Learn* states the
+  four moves — transform, solve for `Y(s)`, decompose, invert — and works one all the way through.
+  *Drill* generates them and asks for `y(t)`. Mostly second order, first order as the on-ramp, and
+  an occasional third. Problems are built from the equation **forwards**, not from a chosen answer
+  backwards, because an IVP does not let you pick your own denominator: the poles of `Y(s)` are the
+  characteristic roots plus whatever the forcing function contributes, and the constants come out
+  however they come out. Laddered like Shifts and Fractions.
 - **Review** — spaced repetition (SM-2 style) over the rows stated generically. Missing a row in
   Drill pulls its card forward.
 - **Progress** — mastery per row per direction, what keeps going wrong counted by mistake
@@ -135,7 +142,9 @@ than a flat set. Nobody is asked what they know: the rung is inferred, shown, an
 | 4 | **Everything** | Translations hidden inside quadratics, alongside the fix-ups. The full section. |
 
 The Fractions drill runs the same machinery over its own four rungs — completing the square, then
-choosing the shape, then distinct factors, then repeated factors and irreducible quadratics.
+choosing the shape, then distinct factors, then repeated factors and irreducible quadratics. The
+IVP drill runs it over four more: first order, then second with distinct real roots, then repeated
+and complex roots, then everything including the occasional third-order equation.
 
 The two theorems are not peers, so they are not offered as a coin flip. Theorem 7.3.1 introduces
 no new objects — it is the seven rows plus the substitution `s → s−a`. Theorem 7.3.2 needs the unit
@@ -175,8 +184,9 @@ under the box shows how the expression was parsed before you commit to it.
 
 Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions
 stops at repeated linear factors and a single irreducible quadratic, which is the range the
-exercises live in; repeated quadratic factors are not generated. The Solve drill still stops at a
-formula for `Y(s)` rather than carrying it on through the decomposition. The second translation theorem is drilled as the book states it, on
+exercises live in; repeated quadratic factors are not generated — an IVP whose forcing resonates
+with a complex pair would invert through `t sin kt`, so those draws are rejected rather than posed.
+Repeated *linear* poles are fine and do appear, since `1/(s-a)^2` is row (b) translated. The second translation theorem is drilled as the book states it, on
 `f(t-a)U(t-a)`; the alternative form `L{g(t)U(t-a)} = e^{-as}L{g(t+a)}` is stated in the reference
 but never generated.
 
@@ -201,6 +211,7 @@ src/
   data/derivatives.ts  the derivative rule: equations (6)-(8), its origin, its invariant
   data/shifts.ts       the translation theorems, the unit step, and the piecewise conversions
   data/fractions.ts    the decomposition method, the piece table, and completing the square
+  data/ivp.ts          the four moves, one problem worked whole, and what the roots tell you
   data/cards.ts        the review deck, derived from the rows
   lib/frac.ts          exact rationals, so 1/3! prints as a fraction and not as 0.1666…
   lib/check.ts         parsing and numeric grading of typed answers
@@ -212,10 +223,12 @@ src/
   lib/facets.ts        which harder variant a problem tested, and which are still owed
   lib/queue.ts         sequencing within a sitting: the gap, and expanding retrieval
   lib/diagnose.ts      naming a typed wrong answer by sampling it against the distractors
+  lib/partial.ts       partial fractions performed rather than posed: exact elimination over
+                       the rationals, which is what an IVP's denominator demands
   lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, Review, Progress,
-                       Settings, About
+  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, IVPs, Review,
+                       Progress, Settings, About
   store/               localStorage-backed progress and preferences
 ```
 
