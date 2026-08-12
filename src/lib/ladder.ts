@@ -14,6 +14,7 @@
  */
 
 import { FRACTION_ITEM_IDS } from '../generators/fraction'
+import { DTRANSFORM_ITEMS } from '../generators/dtransform'
 import { IVP_ITEM } from '../generators/ivp'
 import { SHIFT_ITEMS } from '../generators/shift'
 import { statsFor, type ProgressState } from '../store/progress'
@@ -110,6 +111,27 @@ export const IVP_RUNGS: Rung[] = [
 
 export const SHIFT_LADDER: Ladder = { rungs: SHIFT_RUNGS, items: SHIFT_ITEMS }
 export const IVP_LADDER: Ladder = { rungs: IVP_RUNGS, items: [IVP_ITEM] }
+
+export const DTRANSFORM_RUNGS: Rung[] = [
+  {
+    id: 0,
+    name: 'One factor of t',
+    blurb: 'One power of $t$ against an oscillating row: one derivative, one change of sign.',
+  },
+  {
+    id: 1,
+    name: 'Both directions',
+    blurb:
+      'Reading it backwards as well — a raised denominator is what a factor of $t$ looks like from the $s$-side.',
+  },
+  {
+    id: 2,
+    name: 'Higher powers',
+    blurb: 'Two factors of $t$, so two derivatives and the sign back where it started.',
+  },
+]
+
+export const DTRANSFORM_LADDER: Ladder = { rungs: DTRANSFORM_RUNGS, items: DTRANSFORM_ITEMS }
 export const FRACTION_LADDER: Ladder = { rungs: FRACTION_RUNGS, items: FRACTION_ITEM_IDS }
 
 export const topRung = (ladder: Ladder): number => ladder.rungs.length - 1

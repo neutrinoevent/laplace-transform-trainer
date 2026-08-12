@@ -62,6 +62,9 @@ export interface ProgressState {
   /** Position on the initial-value-problem ladder. */
   ivpRung: number | null
   ivpRun: number
+  /** Position on the derivatives-of-a-transform ladder. */
+  dtRung: number | null
+  dtRun: number
   /**
    * How often each named mistake has been made, and how recently — measured in
    * answers given rather than in days, so it means the same whether the work is
@@ -119,6 +122,8 @@ export function emptyProgress(): ProgressState {
     fracRun: 0,
     ivpRung: null,
     ivpRun: 0,
+    dtRung: null,
+    dtRun: 0,
     slips: {},
     facets: {},
   }
@@ -140,6 +145,8 @@ export function loadProgress(): ProgressState {
       fracRun: parsed.fracRun ?? 0,
       ivpRung: parsed.ivpRung ?? null,
       ivpRun: parsed.ivpRun ?? 0,
+      dtRung: parsed.dtRung ?? null,
+      dtRun: parsed.dtRun ?? 0,
       slips: parsed.slips ?? {},
       facets: parsed.facets ?? {},
     }
@@ -278,12 +285,14 @@ export function recordGrade(state: ProgressState, id: string, grade: Grade): Pro
 /** Move a ladder, keeping it beside the answer that moved it. */
 export function recordRung(
   state: ProgressState,
-  which: 'shift' | 'frac' | 'ivp',
+  which: 'shift' | 'frac' | 'ivp' | 'dt',
   rung: number,
   run: number,
 ): ProgressState {
-  const rungKey = which === 'shift' ? 'shiftRung' : which === 'frac' ? 'fracRung' : 'ivpRung'
-  const runKey = which === 'shift' ? 'shiftRun' : which === 'frac' ? 'fracRun' : 'ivpRun'
+  const rungKey = ({ shift: 'shiftRung', frac: 'fracRung', ivp: 'ivpRung', dt: 'dtRung' } as const)[
+    which
+  ]
+  const runKey = ({ shift: 'shiftRun', frac: 'fracRun', ivp: 'ivpRun', dt: 'dtRun' } as const)[which]
   if (state[rungKey] === rung && state[runKey] === run) return state
   const next: ProgressState = { ...state, [rungKey]: rung, [runKey]: run }
   saveProgress(next)

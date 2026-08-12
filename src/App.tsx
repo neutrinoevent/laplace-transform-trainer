@@ -5,6 +5,8 @@ import { Drill } from './components/Drill'
 import { Fractions } from './components/Fractions'
 import { Match } from './components/Match'
 import { ProgressView } from './components/ProgressView'
+import { DTransform } from './components/DTransform'
+import { Exam } from './components/Exam'
 import { IVP } from './components/IVP'
 import { Review } from './components/Review'
 import { Settings } from './components/Settings'
@@ -34,6 +36,8 @@ type View =
   | 'fractions'
   | 'derivatives'
   | 'ivp'
+  | 'dtransform'
+  | 'exam'
   | 'review'
   | 'progress'
   | 'about'
@@ -65,6 +69,8 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'fractions', label: 'Fractions' },
   { id: 'derivatives', label: 'Derivatives' },
   { id: 'ivp', label: 'IVPs' },
+  { id: 'dtransform', label: 't·f(t)' },
+  { id: 'exam', label: 'Exam' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
   { id: 'about', label: 'About' },
@@ -118,7 +124,7 @@ export default function App() {
     setProgress((p) => recordAttempt(p, ids, correct, detail))
   const onGrade = (id: string, grade: Grade) => setProgress((p) => recordGrade(p, id, grade))
   const onBoard = (size: number, ms: number) => setProgress((p) => recordBoard(p, size, ms))
-  const onRung = (which: 'shift' | 'frac' | 'ivp') => (rung: number, run: number) =>
+  const onRung = (which: 'shift' | 'frac' | 'ivp' | 'dt') => (rung: number, run: number) =>
     setProgress((p) => recordRung(p, which, rung, run))
   const onImport = (json: string): boolean => {
     const next = importProgress(json)
@@ -136,11 +142,36 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="brand">
+        <div className="header-top">
+          <div className="brand">
           <span className="brand-mark" aria-hidden="true">
             ℒ
           </span>
-          <span className="brand-name">Laplace Trainer</span>
+            <span className="brand-name">Laplace Trainer</span>
+          </div>
+          <div className="header-tools">
+            <div className="settings-anchor">
+              <button
+                className={settingsOpen ? 'btn icon-btn icon-btn-active' : 'btn icon-btn'}
+                onClick={() => setSettingsOpen((open) => !open)}
+                aria-label="Settings"
+                aria-expanded={settingsOpen}
+                title="Settings"
+              >
+                <GearIcon />
+              </button>
+              {settingsOpen ? (
+                <Settings
+                  prefs={prefs}
+                  onPrefs={updatePrefs}
+                  onClose={() => setSettingsOpen(false)}
+                />
+              ) : null}
+            </div>
+            <button className="btn icon-btn" onClick={toggleTheme} aria-label="Toggle color theme">
+              ◐
+            </button>
+          </div>
         </div>
         <nav className="tabs" aria-label="Main">
           {VIEWS.map((v) => (
@@ -155,29 +186,6 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="header-tools">
-          <div className="settings-anchor">
-            <button
-              className={settingsOpen ? 'btn icon-btn icon-btn-active' : 'btn icon-btn'}
-              onClick={() => setSettingsOpen((open) => !open)}
-              aria-label="Settings"
-              aria-expanded={settingsOpen}
-              title="Settings"
-            >
-              <GearIcon />
-            </button>
-            {settingsOpen ? (
-              <Settings
-                prefs={prefs}
-                onPrefs={updatePrefs}
-                onClose={() => setSettingsOpen(false)}
-              />
-            ) : null}
-          </div>
-          <button className="btn icon-btn" onClick={toggleTheme} aria-label="Toggle color theme">
-            ◐
-          </button>
-        </div>
       </header>
 
       <main className="main">
@@ -224,6 +232,16 @@ export default function App() {
             onRung={onRung('ivp')}
           />
         ) : null}
+        {view === 'dtransform' ? (
+          <DTransform
+            progress={progress}
+            prefs={prefs}
+            onPrefs={updatePrefs}
+            onAnswer={onAnswer}
+            onRung={onRung('dt')}
+          />
+        ) : null}
+        {view === 'exam' ? <Exam onAnswer={onAnswer} /> : null}
         {view === 'review' ? (
           <Review progress={progress} prefs={prefs} onPrefs={updatePrefs} onGrade={onGrade} />
         ) : null}

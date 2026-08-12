@@ -50,6 +50,11 @@ export function polyMul(a: Poly, b: Poly): Poly {
 
 export const polyMulAll = (ps: Poly[]): Poly => ps.reduce(polyMul, [1])
 
+export const polySub = (a: Poly, b: Poly): Poly => polyAdd(a, polyScale(b, -1))
+
+/** `d/ds`, which drops the constant term and pulls each power down one. */
+export const polyDeriv = (p: Poly): Poly => (p.length < 2 ? [0] : p.slice(1).map((c, i) => c * (i + 1)))
+
 /** Drop trailing zeros so degree and equality mean what they say. */
 export const polyTrim = (p: Poly): Poly => p.slice(0, polyDegree(p) + 1)
 

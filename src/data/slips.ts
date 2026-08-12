@@ -29,6 +29,9 @@ export type SlipId =
   | 'derivative-terms'
   | 'decomposition-shape'
   | 'decomposition-constants'
+  | 'derivative-sign'
+  | 'derivative-count'
+  | 'derivative-shape'
   | 'square'
 
 export interface Slip {
@@ -131,6 +134,24 @@ export const SLIPS: Slip[] = [
     name: 'The decomposition’s constants',
     what: 'Constants attached to the wrong factor, signed wrongly, or a piece missing from the sum.',
     fix: 'Cover up the factor you want and set $s$ to its root. It is faster than a system and harder to get backwards.',
+  },
+  {
+    id: 'derivative-sign',
+    name: 'The sign on $(-1)^n$',
+    what: 'Theorem 7.4.1 applied without its sign, so every term of the answer comes out backwards.',
+    fix: 'One factor of $t$ costs one derivative *and* one change of sign. Odd powers of $t$ flip; even ones do not.',
+  },
+  {
+    id: 'derivative-count',
+    name: 'How many times to differentiate',
+    what: 'The transform differentiated once too often or not often enough for the power of $t$ in the question.',
+    fix: 'The power of $t$ and the number of differentiations are the same number, and it is also what the denominator’s power records: $t^n$ raises it by $n$.',
+  },
+  {
+    id: 'derivative-shape',
+    name: 'Differentiating against multiplying',
+    what: 'Multiplying by $t$ treated as an operation *on* the transform rather than as differentiating it.',
+    fix: 'Theorem 7.4.1 says $\\mathcal{L}\\{t^nf(t)\\} = (-1)^n F^{(n)}(s)$. The quotient rule changes the numerator as well as the denominator.',
   },
   {
     id: 'square',

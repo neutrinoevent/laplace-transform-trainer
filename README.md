@@ -3,8 +3,9 @@
 A drill for the operational core of Laplace transforms as Zill sets it out in
 *A First Course in Differential Equations*, 9e: the seven basic pairs of **Theorem 7.1.1** and
 **Theorem 7.2.1**, in both directions and with the constant fix-up made the explicit object of
-practice; the transform of a derivative, **Theorem 7.2.2**, which is what puts them to work; and the
-two translation theorems of §7.3, **7.3.1** and **7.3.2**, which are what make them reach.
+practice; the transform of a derivative, **Theorem 7.2.2**, which is what puts them to work; the
+two translation theorems of §7.3, **7.3.1** and **7.3.2**, which are what make them reach; and
+derivatives of a transform, **Theorem 7.4.1**, which is the only route to `t sin kt`.
 
 Notation follows the book exactly: `t` and `s` for the variables, `n` for the power, `a` for the
 exponential rate, `k` for the frequency, and the rows labelled (a)–(g) in the order the book gives
@@ -79,6 +80,18 @@ So the whole trainer is organised around that gap.
   backwards, because an IVP does not let you pick your own denominator: the poles of `Y(s)` are the
   characteristic roots plus whatever the forcing function contributes, and the constants come out
   however they come out. Laddered like Shifts and Fractions.
+- **t·f(t)** — Theorem 7.4.1: `L{t^n f(t)} = (-1)^n d^n/ds^n F(s)`. The theorem that runs the
+  other way — an operation on the *transform* corresponding to one on the function. *Learn* derives
+  it by differentiating `e^{-st}` under the integral, so the factor of `t` is seen falling out
+  rather than asserted. *Drill* goes both ways: producing `2ks/(s^2+k^2)^2` from `t sin kt`, and
+  recognising a raised denominator as the fingerprint of a factor of `t`. Three rungs: forwards,
+  then backwards, then two powers of `t`.
+- **Exam** — a mixed paper of 4 to 10 questions, one drawn from each section, in no useful order
+  and with nothing saying which is which; deciding that is most of the work. Every question is
+  typed, and **nothing is marked until the paper is handed in** — committing to an answer without
+  being told is the part a drill cannot teach. Afterwards every question is worked through, wrong
+  answers are named where they land on a known mistake, and the result counts towards the same
+  skills a drill would have moved.
 - **Review** — spaced repetition (SM-2 style) over the rows stated generically. Missing a row in
   Drill pulls its card forward.
 - **Progress** — mastery per row per direction, what keeps going wrong counted by mistake
@@ -182,11 +195,12 @@ under the box shows how the expression was parsed before you commit to it.
 
 ## Not in this version
 
-Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions
-stops at repeated linear factors and a single irreducible quadratic, which is the range the
-exercises live in; repeated quadratic factors are not generated — an IVP whose forcing resonates
-with a complex pair would invert through `t sin kt`, so those draws are rejected rather than posed.
-Repeated *linear* poles are fine and do appear, since `1/(s-a)^2` is row (b) translated. The second translation theorem is drilled as the book states it, on
+Convolution, periodic functions and the Dirac delta. Partial fractions stops at repeated linear
+factors and a single irreducible quadratic, which is the range the exercises live in; repeated
+quadratic factors are not generated, so an IVP whose forcing resonates with a complex pair is
+rejected rather than posed. That case inverts through `t sin kt`, which the **t·f(t)** section now
+teaches — resonance is covered there, but the IVP generator does not yet reach for it. Repeated
+*linear* poles are fine and do appear, since `1/(s-a)^2` is row (b) translated. The second translation theorem is drilled as the book states it, on
 `f(t-a)U(t-a)`; the alternative form `L{g(t)U(t-a)} = e^{-as}L{g(t+a)}` is stated in the reference
 but never generated.
 
@@ -212,6 +226,7 @@ src/
   data/shifts.ts       the translation theorems, the unit step, and the piecewise conversions
   data/fractions.ts    the decomposition method, the piece table, and completing the square
   data/ivp.ts          the four moves, one problem worked whole, and what the roots tell you
+  data/dtransform.ts   Theorem 7.4.1, where it comes from, and the pairs worth knowing
   data/cards.ts        the review deck, derived from the rows
   lib/frac.ts          exact rationals, so 1/3! prints as a fraction and not as 0.1666…
   lib/check.ts         parsing and numeric grading of typed answers
@@ -225,10 +240,12 @@ src/
   lib/diagnose.ts      naming a typed wrong answer by sampling it against the distractors
   lib/partial.ts       partial fractions performed rather than posed: exact elimination over
                        the rationals, which is what an IVP's denominator demands
+  lib/rat.ts           a transform as P(s)/D(s)^m, and its derivatives — the shape that keeps
+                       Theorem 7.4.1 exact instead of squaring the denominator every time
   lib/ladder.ts        the §7.3 ladder: rungs, seeding from evidence, promotion and demotion
   generators/          problem construction, distractors, worked solutions, adaptive selection
-  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, IVPs, Review,
-                       Progress, Settings, About
+  components/          Table, Drill, Match, Shifts, Fractions, Derivatives, IVPs, t·f(t),
+                       Exam, Review, Progress, Settings, About
   store/               localStorage-backed progress and preferences
 ```
 

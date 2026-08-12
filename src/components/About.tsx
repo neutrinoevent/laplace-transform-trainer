@@ -43,6 +43,14 @@ export function About() {
           <Rich text="— the capstone: an initial-value problem in, a function of $t$ out. Transform the equation, solve for $Y(s)$, decompose, invert. Mostly second order, with first order as the on-ramp and the occasional third. The problems are built from the equation forwards rather than from a chosen answer backwards, because an initial-value problem does not let you pick your own denominator." />
         </li>
         <li>
+          <strong>t·f(t)</strong>{' '}
+          <Rich text="— Theorem 7.4.1, $\mathcal{L}\{t^{n}f(t)\} = (-1)^{n}F^{(n)}(s)$: the theorem that runs the other way, where an operation on the transform matches one on the function. It is derived rather than asserted — the factor of $t$ falls out of differentiating $e^{-st}$ under the integral — and it is the only route to $t\sin kt$, which nothing in the table can produce." />
+        </li>
+        <li>
+          <strong>Exam</strong>{' '}
+          <Rich text="— a mixed paper, one question from each section, in no useful order and with nothing saying which is which. Every question is typed, and *nothing is marked until you hand it in*: committing to an answer without being told is the part a drill cannot teach. Everything is worked through afterwards, and it counts towards the same skills a drill would move." />
+        </li>
+        <li>
           <strong>Review</strong> — spaced repetition on the rows stated generically, so they are
           still there at the exam.
         </li>
@@ -89,7 +97,7 @@ export function About() {
       <p>
         {/* Single backslashes: a JSX attribute string is not escape-processed,
             so a doubled one reaches KaTeX as its line break. */}
-        <Rich text="Derivatives of a transform, convolution, periodic functions and the Dirac delta. Partial fractions stop at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; a repeated quadratic factor is never generated, so an initial-value problem whose forcing resonates with a complex pair — which would invert through $t\sin kt$ — is not posed. A repeated real root is fine and does appear, since $1/(s-a)^2$ is row (b) translated. The second translation theorem is drilled as the book states it, on $f(t-a)\,\mathcal{U}(t-a)$; the alternative form $\mathcal{L}\{g(t)\,\mathcal{U}(t-a)\} = e^{-as}\mathcal{L}\{g(t+a)\}$ is stated but not generated." />
+        <Rich text="Convolution, periodic functions and the Dirac delta. Partial fractions stop at repeated linear factors and a single irreducible quadratic, which is the range the exercises live in; a repeated quadratic factor is never generated, so an initial-value problem whose forcing resonates with a complex pair — which would invert through $t\sin kt$ — is not posed. A repeated real root is fine and does appear, since $1/(s-a)^2$ is row (b) translated. The second translation theorem is drilled as the book states it, on $f(t-a)\,\mathcal{U}(t-a)$; the alternative form $\mathcal{L}\{g(t)\,\mathcal{U}(t-a)\} = e^{-as}\mathcal{L}\{g(t+a)\}$ is stated but not generated." />
       </p>
 
       <h3 className="section-title" style={{ marginTop: 6 }}>

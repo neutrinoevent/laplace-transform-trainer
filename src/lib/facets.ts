@@ -55,6 +55,11 @@ export function hardFacet(itemId: string): Facet | null {
       return 'high-order'
     case 'ivp:solve':
       return 'forced'
+    case 'dtrans:forward':
+    case 'dtrans:inverse':
+      // The second power is where the sign comes back round and the numerator
+      // stops being a single term.
+      return 'repeated'
     default:
       return null
   }

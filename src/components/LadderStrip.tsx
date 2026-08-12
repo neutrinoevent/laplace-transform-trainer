@@ -1,4 +1,5 @@
 import { rungProgress, topRung, type Ladder, type LadderState } from '../lib/ladder'
+import { Rich } from './Tex'
 
 /**
  * Where the questions are coming from, said plainly. The ladder moves without
@@ -34,7 +35,9 @@ export function LadderStrip({ ladder, state }: { ladder: Ladder; state: LadderSt
             : `${rung.id + 1} of ${ladder.rungs.length} · ${Math.round(rungProgress(ladder, state) * 100)}% to the next`}
         </span>
       </div>
-      <p className="ladder-blurb">{rung.blurb}</p>
+      <p className="ladder-blurb">
+        <Rich text={rung.blurb} />
+      </p>
     </div>
   )
 }
